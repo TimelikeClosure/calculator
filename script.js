@@ -43,7 +43,8 @@ function Calculator () {
 
     //  Begin pass-through method
     this.addButtonPress = function(buttonDOMObject) {
-        buttons.getButtonPressObject(buttonDOMObject);
+        var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
+        console.log('buttonPress object : ', buttonPress);
     };
     //  Close pass-through method
 
@@ -52,6 +53,29 @@ function Calculator () {
         this.getButtonPressObject = function(buttonDOMObject) {
             var buttonString = getButtonStringFromDOM(buttonDOMObject);
             var buttonType = getButtonTypeFromString(buttonString);
+            switch (buttonType) {
+                case "operand":
+                    if (buttonString.charCodeAt(0) >= 48 && buttonString.charCodeAt(0) <= 57) {
+                        return new DigitPress(buttonString);
+                    }
+                    return new OperandPress(buttonString);
+                case "operator":
+                    switch (buttonString) {
+                        case '=':
+                            return new UnaryOperatorPress(buttonString);
+                        case '+':
+                        case '-':
+                        case '×':
+                        case '÷':
+                            return new BinaryOperatorPress(buttonString);
+                        default:
+                            return new OperatorPress(buttonString);
+                    }
+                case "special":
+                    return new SpecialPress(buttonString);
+                default:
+                    return undefined;
+            }
         };
 
         function getButtonStringFromDOM(buttonDOMObject){
@@ -83,6 +107,26 @@ function Calculator () {
                 default:
                     return undefined;
             }
+        }
+
+        function ButtonPress(buttonString){}
+        function OperandPress(buttonString){
+            ButtonPress.call(this, buttonString);
+        }
+        function DigitPress(buttonString){
+            OperandPress.call(this, buttonString);
+        }
+        function OperatorPress(buttonString){
+            ButtonPress.call(this, buttonString);
+        }
+        function UnaryOperatorPress(buttonString){
+            OperatorPress.call(this, buttonString);
+        }
+        function BinaryOperatorPress(buttonString){
+            OperatorPress.call(this, buttonString);
+        }
+        function SpecialPress(buttonString){
+            ButtonPress.call(this, buttonString);
         }
     }
     //  Close Buttons object constructor
