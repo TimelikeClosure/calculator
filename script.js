@@ -45,6 +45,7 @@ function Calculator () {
     this.addButtonPress = function(buttonDOMObject) {
         var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
         console.log('buttonPress object : ', buttonPress);
+        memory.applyButtonPress(buttonPress);
     };
     //  Close pass-through method
 
@@ -132,7 +133,12 @@ function Calculator () {
     //  Close Buttons object constructor
 
     //  Begin Memory object constructor
-    function Memory () {}
+    function Memory () {
+        var operationList = [];
+        this.applyButtonPress = function(buttonPress) {
+
+        }
+    }
     //  Close Memory object constructor
 
     //  Begin Display object constructor
