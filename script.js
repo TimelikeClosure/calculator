@@ -124,18 +124,9 @@ function Calculator () {
         function OperandPress(buttonString, operationStageLimitFunction){
             ButtonPress.call(this, buttonString, 'operand');
         }
-        /*function DigitPress(buttonString){
-            OperandPress.call(this, buttonString);
-        }*/
         function OperatorPress(buttonString, numOperands){
             ButtonPress.call(this, buttonString, 'operator');
         }
-        /*function UnaryOperatorPress(buttonString){
-            OperatorPress.call(this, buttonString);
-        }
-        function BinaryOperatorPress(buttonString){
-            OperatorPress.call(this, buttonString);
-        }*/
         function SpecialPress(buttonString){
             ButtonPress.call(this, buttonString, 'special');
         }
@@ -144,28 +135,40 @@ function Calculator () {
 
     //  Begin Memory object constructor
     function Memory () {
-        var operationList = [new OperationStage('0', 'operand', 'implicit')];
+        var operationList = [new ZeroOperationStage()];
         this.applyButtonPress = function(buttonPress) {
-            if (operationList.length >= 1) {
+            if (buttonPress.getOperationType() == 'special'){
+                switch (buttonPress.getString()) {
+                    case 'C':
+                        operationList = [null];
+                    case 'CE':
+                        operationList[operationList.length - 1] = new ZeroOperationStage();
+                        break;
+                    default:
+                        break;
+                }
+            } else if (operationList.length >= 1) {
                 var appendButtonPressResult = operationList[operationList.length-1].appendButtonPress(buttonPress);
-                console.log("appendButtonPressResult : " + appendButtonPressResult);
                 if (!appendButtonPressResult) {
-                    operationList.push(new OperationStage(buttonPress.getString(), buttonPress.getOperationType(), 'explicit'));
+                    operationList.push(new ButtonPressOperationStage(buttonPress));
                     if (buttonPress.getOperationType() == 'operator') {
-                        operationList.push(new OperationStage(
-                            operationList[operationList.length-2].getValue(),
-                            operationList[operationList.length-2].getOperationType(),
-                            'implicit'
-                        ));
+                        operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
                     }
                 } else if (appendButtonPressResult == 'previous') {
-                    if (operationList.length >= 2) {
+                    if (operationList.length >= 3) {
                         appendButtonPressResult = operationList[operationList.length-2].appendButtonPress(buttonPress);
-                        console.log("appendButtonPressResult : " + appendButtonPressResult);
-                    } else {}
+                    } else {
+                        operationList[0].makeExplicit();
+                        if (operationList.length == 1) {
+                            operationList.push(new ButtonPressOperationStage(buttonPress));
+                        } else {
+                            operationList[1] = new ButtonPressOperationStage(buttonPress);
+                        }
+                        operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
+                    }
                 }
             } else {
-                operationList.push(new OperationStage(buttonPress.getString(), buttonPress.getOperationType(),'explicit'));
+                operationList.push(new ButtonPressOperationStage(buttonPress));
             }
             return operationList.map(function(object){return object.getValue()});
         };
@@ -208,7 +211,20 @@ function Calculator () {
             };
             this.getCreationType = function() {
                 return creationType;
-            }
+            };
+            this.makeExplicit = function() {
+                creationType = "explicit";
+                return null;
+            };
+        }
+        function ZeroOperationStage () {
+            OperationStage.call(this, '0', 'operand', 'implicit');
+        }
+        function ButtonPressOperationStage(buttonPress) {
+            OperationStage.call(this, buttonPress.getString(), buttonPress.getOperationType(), 'explicit');
+        }
+        function CopyOperationStage(referenceOperationStage) {
+            OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), 'implicit');
         }
     }
     //  Close Memory object constructor
