@@ -11,37 +11,28 @@ $(document).ready(function(){
 });
 //  Close on document load handler
 
+//  Begin calculator main controller instantiation
+var calculator = new CalculatorController();
+//  Close calculator main controller instantiation
 
-//  Begin updateDisplay function
-
+//  Begin CalculatorController constructor
 /**
- * Update the display with the given value.
- * @param {string} type "itemAdded", "calculated", or "error"
- * @param {number|string|undefined} value
- * @param item
+ * Constructs controller for calculator logic
+ * @constructor
  */
-function updateDisplay(type, value, item) {
-    if (value === undefined) {
-        $('#display').text("");
-    } else {
-        $('#display').text(value);
-    }
-}
-//  Close updateDisplay function
+function CalculatorController () {
 
-//  Begin global object my_calculator
-var calculator = new Calculator(updateDisplay);
-//  Close global object my_calculator
-
-//  Begin Calculator constructor
-function Calculator () {
-    //  Begin main component instantiation
-    var buttons = new Buttons();
-    var memory = new Memory();
-    var display = new Display();
-    //  End main component instantiation
+    //  Begin calculator component controller instantiation
+    var buttons = new ButtonsController();
+    var memory = new MemoryController();
+    var display = new DisplayController();
+    //  End calculator component controller instantiation
 
     //  Begin addButtonPress controller method
+    /**
+     * Updates memory and display from button presses
+     * @param buttonDOMObject
+     */
     this.addButtonPress = function(buttonDOMObject) {
         display.emptyDisplay();
         var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
@@ -50,8 +41,12 @@ function Calculator () {
     };
     //  Close addButtonPress controller method
 
-    //  Begin Buttons object constructor
-    function Buttons () {
+    //  Begin ButtonsController constructor
+    /**
+     * Constructs controller for DOM button inputs
+     * @constructor
+     */
+    function ButtonsController () {
         this.getButtonPressObject = function(buttonDOMObject) {
             var buttonString = getButtonPressStringFromDOM(buttonDOMObject);
             return getButtonPressObjectFromString(buttonString);
@@ -106,10 +101,14 @@ function Calculator () {
             ButtonPress.call(this, buttonString, 'special');
         }
     }
-    //  Close Buttons object constructor
+    //  Close ButtonsController constructor
 
-    //  Begin Memory object constructor
-    function Memory () {
+    //  Begin MemoryController constructor
+    /**
+     * Constructs controller for memory objects
+     * @constructor
+     */
+    function MemoryController () {
         var operationList = [new ZeroOperationStage()];
         this.applyButtonPress = function(buttonPress) {
             if (buttonPress.getOperationType() == 'special'){
@@ -202,10 +201,14 @@ function Calculator () {
             OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), 'implicit');
         }
     }
-    //  Close Memory object constructor
+    //  Close MemoryController constructor
 
-    //  Begin Display object constructor
-    function Display () {
+    //  Begin DisplayController constructor
+    /**
+     * Constructs controller for DOM display objects
+     * @constructor
+     */
+    function DisplayController () {
         this.emptyDisplay = function() {
             $('#operation-history').text('');
             $('#operation-current').text('');
@@ -223,6 +226,6 @@ function Calculator () {
             }
         }
     }
-    //  Close Display object constructor
+    //  Close DisplayController constructor
 }
-//  Close Calculator constructor
+//  Close CalculatorController constructor
