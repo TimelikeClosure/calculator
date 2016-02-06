@@ -36,8 +36,8 @@ function CalculatorController () {
     this.addButtonPress = function(buttonDOMObject) {
         display.emptyDisplay();
         var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
-        var currentMemory = memory.applyButtonPress(buttonPress);
-        display.updateDisplay(currentMemory);
+        var memoryDisplayObject = memory.applyButtonPress(buttonPress);
+        display.updateDisplay(memoryDisplayObject);
     };
     //  Close addButtonPress controller method
 
@@ -109,18 +109,21 @@ function CalculatorController () {
      * @constructor
      */
     function MemoryController () {
-        var operationList = [new ZeroOperationStage()];
+        var currentOperationList = new OperationList();
         this.applyButtonPress = function(buttonPress) {
             if (buttonPress.getOperationType() == 'special'){
                 switch (buttonPress.getString()) {
                     case 'C':
-                        operationList = [null];
+                        clearCurrentEntry();
+                        break;
                     case 'CE':
-                        operationList[operationList.length - 1] = new ZeroOperationStage();
+                        clearCurrentOperationList();
                         break;
                     default:
                         break;
                 }
+
+            //  Begin to-be-converted section
             } else if (operationList.length >= 1) {
                 var appendButtonPressResult = operationList[operationList.length-1].appendButtonPress(buttonPress);
                 if (!appendButtonPressResult) {
@@ -144,8 +147,55 @@ function CalculatorController () {
             } else {
                 operationList.push(new ButtonPressOperationStage(buttonPress));
             }
-            return operationList.map(function(object){return object.getValue()});
+            //  Close to-be-converted section
+
+            return [currentOperationList.getDisplayObject(),[]];
         };
+
+        function OperationList (lastOperation) {
+            if (lastOperation == undefined) {
+                var operationList = [new ZeroOperationStage()];
+            } else {
+                var operationList = [new CopyOperationStage(lastOperation)];
+            }
+
+            this.getDisplayObject = function() {
+                if (operationList.length < 1) {
+                    return ['null',''];
+                } else {
+                    var operationListClone = operationList.slice();
+                    var lastOperation = (operationListClone.pop()).getValue();
+                    return [lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')];
+                }
+            };
+
+            this.clearEntry = function() {
+                if (getLastOperation().getCreationType() == 'explicit' ||
+                    getLastOperation().getOperationType() != 'operand' ||
+                    getLastOperation().getValue() !== '0') {
+                    setLastOperation(new ZeroOperationStage());
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            function getLastOperation(){
+                if (operationList.length < 1) {
+                    return undefined;
+                }
+                return operationList[operationList.length - 1];
+            }
+
+            function setLastOperation(newEntry) {
+                if (operationList.length >= 1) {
+                    operationList[operationList.length - 1] = newEntry;
+                } else {
+                    operationList.push(newEntry);
+                }
+            }
+
+        }
 
         function OperationStage (value, operationType, creationType) {
             this.appendButtonPress = function(buttonPress) {
@@ -200,6 +250,17 @@ function CalculatorController () {
         function CopyOperationStage(referenceOperationStage) {
             OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), 'implicit');
         }
+
+        function clearCurrentEntry() {
+            var clearCurrentEntryResult = currentOperationList.clearEntry();
+            if (!clearCurrentEntryResult) {
+                clearCurrentOperationList();
+            }
+        }
+
+        function clearCurrentOperationList() {
+            currentOperationList = new OperationList();
+        }
     }
     //  Close MemoryController constructor
 
@@ -213,17 +274,12 @@ function CalculatorController () {
             $('#operation-history').text('');
             $('#operation-current').text('');
         };
-        this.updateDisplay = function(memoryObject) {
-            if (memoryObject.length < 2) {
-                $('#operation-history').text('');
-            } else {
-                $('#operation-history').text(memoryObject.slice(0, memoryObject.length-1).join(' '));
-            }
-            if (memoryObject.length < 1) {
-                $('#operation-current').text('');
-            } else {
-                $('#operation-current').text(memoryObject[memoryObject.length-1]);
-            }
+        this.updateDisplay = function(memoryDisplayObject) {
+            //  Display current operation and last operation set
+            $('#operation-current').text(memoryDisplayObject[0][0]);
+            $('#operation-history').text(memoryDisplayObject[0][1]);
+            //  Display completed operation history
+            //not yet implemented
         }
     }
     //  Close DisplayController constructor
