@@ -53,40 +53,15 @@ function Calculator () {
     //  Begin Buttons object constructor
     function Buttons () {
         this.getButtonPressObject = function(buttonDOMObject) {
-            var buttonString = getButtonStringFromDOM(buttonDOMObject);
-            var buttonType = getButtonTypeFromString(buttonString);
-            switch (buttonType) {
-                case "operand":
-                    if (buttonString.charCodeAt(0) >= 49 && buttonString.charCodeAt(0) <= 57) { //Non-zero digits
-                        return new OperandPress(buttonString, null);
-                    } else if (buttonString == '0') {
-                        return new OperandPress(buttonString, null);
-                    }
-                    return new OperandPress(buttonString);
-                case "operator":
-                    switch (buttonString) {
-                        case '=':
-                            return new OperatorPress(buttonString, 1);
-                        case '+':
-                        case '-':
-                        case '×':
-                        case '÷':
-                            return new OperatorPress(buttonString, 2);
-                        default:
-                            return new OperatorPress(buttonString);
-                    }
-                case "special":
-                    return new SpecialPress(buttonString);
-                default:
-                    return undefined;
-            }
+            var buttonString = getButtonPressStringFromDOM(buttonDOMObject);
+            return getButtonPressObjectFromString(buttonString);
         };
 
-        function getButtonStringFromDOM(buttonDOMObject){
+        function getButtonPressStringFromDOM(buttonDOMObject){
             return buttonDOMObject.text();
         }
 
-        function getButtonTypeFromString(buttonString){
+        function getButtonPressObjectFromString(buttonString){
             switch (buttonString) {
                 case '0':
                 case '1':
@@ -98,16 +73,16 @@ function Calculator () {
                 case '7':
                 case '8':
                 case '9':
-                    return 'operand';
+                    return new OperandPress(buttonString);
                 case '+':
                 case '-':
                 case '×':
                 case '÷':
                 case '=':
-                    return 'operator';
+                    return new OperatorPress(buttonString);
                 case 'C':
                 case 'CE':
-                    return 'special';
+                    return new SpecialPress(buttonString);
                 default:
                     return undefined;
             }
@@ -121,10 +96,10 @@ function Calculator () {
                 return operationType;
             };
         }
-        function OperandPress(buttonString, operationStageLimitFunction){
+        function OperandPress(buttonString){
             ButtonPress.call(this, buttonString, 'operand');
         }
-        function OperatorPress(buttonString, numOperands){
+        function OperatorPress(buttonString){
             ButtonPress.call(this, buttonString, 'operator');
         }
         function SpecialPress(buttonString){
