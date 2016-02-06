@@ -43,21 +43,10 @@ function Calculator () {
 
     //  Begin addButtonPress controller method
     this.addButtonPress = function(buttonDOMObject) {
+        display.emptyDisplay();
         var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
-        var buttonPressConsoleLog = [
-            buttonPress.getString(),
-            buttonPress.getOperationType()
-        ];
-        console.log('buttonPress object : ', buttonPressConsoleLog);
         var currentMemory = memory.applyButtonPress(buttonPress);
-        var currentMemoryConsoleLog = currentMemory.map(function (object) {
-            var output = [];
-            output.push(object.getValue());
-            output.push(object.getOperationType());
-            output.push(object.getCreationType());
-            return output;
-        });
-        console.log('currentMemory array : ', currentMemoryConsoleLog);
+        display.updateDisplay(currentMemory);
     };
     //  Close addButtonPress controller method
 
@@ -167,7 +156,7 @@ function Calculator () {
                             operationList[operationList.length-2].getValue(),
                             operationList[operationList.length-2].getOperationType(),
                             'implicit'
-                        ))
+                        ));
                     }
                 } else if (appendButtonPressResult == 'previous') {
                     if (operationList.length >= 2) {
@@ -178,7 +167,7 @@ function Calculator () {
             } else {
                 operationList.push(new OperationStage(buttonPress.getString(), buttonPress.getOperationType(),'explicit'));
             }
-            return operationList.slice();
+            return operationList.map(function(object){return object.getValue()});
         };
 
         function OperationStage (value, operationType, creationType) {
@@ -225,7 +214,24 @@ function Calculator () {
     //  Close Memory object constructor
 
     //  Begin Display object constructor
-    function Display () {}
+    function Display () {
+        this.emptyDisplay = function() {
+            $('#operation-history').text('');
+            $('#operation-current').text('');
+        };
+        this.updateDisplay = function(memoryObject) {
+            if (memoryObject.length < 2) {
+                $('#operation-history').text('');
+            } else {
+                $('#operation-history').text(memoryObject.slice(0, memoryObject.length-1).join(' '));
+            }
+            if (memoryObject.length < 1) {
+                $('#operation-current').text('');
+            } else {
+                $('#operation-current').text(memoryObject[memoryObject.length-1]);
+            }
+        }
+    }
     //  Close Display object constructor
 }
 //  Close Calculator constructor

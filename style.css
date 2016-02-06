@@ -8,7 +8,13 @@
 /*Close styling calculator body*/
 
 /*Begin styling calculator display*/
-.display {
+.display-md {
+    font-size: 20px;
+    text-align: right;
+    font-family: "Lucida Console", Monaco, monospace;
+    min-height: 29px;
+}
+.display-lg {
     font-size: 40px;
     text-align: right;
     font-family: "Lucida Console", Monaco, monospace;
