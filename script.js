@@ -437,12 +437,12 @@ function CalculatorController () {
      */
     function DisplayController () {
         this.emptyDisplay = function() {
-            $('#operation-history').text('');
+            $('#operation-list').text('');
             $('#operation-current').text('');
         };
         this.updateDisplay = function(memoryDisplayObject) {
             //  Display current operation and last operation set
-            $('#operation-current').text(memoryDisplayObject[0][0]);
+            $('#operation-list').text(memoryDisplayObject[0][0]);
             $('#operation-history').text(memoryDisplayObject[0][1]);
             //  Display completed operation history
             //not yet implemented
