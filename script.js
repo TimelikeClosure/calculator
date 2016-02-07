@@ -111,53 +111,81 @@ function CalculatorController () {
     function MemoryController () {
         var currentOperationList = new OperationList();
         this.applyButtonPress = function(buttonPress) {
-            if (buttonPress.getOperationType() == 'special'){
-                switch (buttonPress.getString()) {
-                    case 'C':
-                        clearCurrentEntry();
-                        break;
-                    case 'CE':
-                        clearCurrentOperationList();
-                        break;
-                    default:
-                        break;
-                }
+            switch (buttonPress.getOperationType()) {
+                case 'special':
+                    switch (buttonPress.getString()) {
+                        case 'CE':
+                            clearCurrentEntry();
+                            break;
+                        case 'C':
+                            clearCurrentOperationList();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
 
-            //  Begin to-be-converted section
-            } else if (operationList.length >= 1) {
-                var appendButtonPressResult = operationList[operationList.length-1].appendButtonPress(buttonPress);
-                if (!appendButtonPressResult) {
-                    operationList.push(new ButtonPressOperationStage(buttonPress));
-                    if (buttonPress.getOperationType() == 'operator') {
-                        operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
-                    }
-                } else if (appendButtonPressResult == 'previous') {
-                    if (operationList.length >= 3) {
-                        appendButtonPressResult = operationList[operationList.length-2].appendButtonPress(buttonPress);
-                    } else {
-                        operationList[0].makeExplicit();
-                        if (operationList.length == 1) {
+                //  Begin to-be-converted section
+                    /*if (operationList.length >= 1) {
+                        var appendButtonPressResult = operationList[operationList.length-1].appendButtonPress(buttonPress);
+                        if (!appendButtonPressResult) {
                             operationList.push(new ButtonPressOperationStage(buttonPress));
-                        } else {
-                            operationList[1] = new ButtonPressOperationStage(buttonPress);
+                            if (buttonPress.getOperationType() == 'operator') {
+                                operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
+                            }
+                        } else if (appendButtonPressResult == 'previous') {
+                            if (operationList.length >= 3) {
+                                appendButtonPressResult = operationList[operationList.length-2].appendButtonPress(buttonPress);
+                            } else {
+                                operationList[0].makeExplicit();
+                                if (operationList.length == 1) {
+                                    operationList.push(new ButtonPressOperationStage(buttonPress));
+                                } else {
+                                    operationList[1] = new ButtonPressOperationStage(buttonPress);
+                                }
+                                operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
+                            }
                         }
-                        operationList.push(new CopyOperationStage(operationList[operationList.length-2]));
-                    }
-                }
-            } else {
-                operationList.push(new ButtonPressOperationStage(buttonPress));
+                    } else {
+                        operationList.push(new ButtonPressOperationStage(buttonPress));
+                    }*/
+
+                //  Close to-be-converted section
+                case 'operand':
+                case 'operator':
+                    currentOperationList.addButtonPress(buttonPress);
+                    break;
+                default:
+                    return [['ERROR','invalid operation type'],[]];
             }
-            //  Close to-be-converted section
 
             return [currentOperationList.getDisplayObject(),[]];
         };
 
         function OperationList (lastOperation) {
+            var operationList;
             if (lastOperation == undefined) {
-                var operationList = [new ZeroOperationStage()];
+                operationList = [new ZeroOperationStage()];
             } else {
-                var operationList = [new CopyOperationStage(lastOperation)];
+                operationList = [new CopyOperationStage(lastOperation)];
             }
+
+            this.addButtonPress = function(buttonPress) {
+                var currentIndex = operationList.length - 1;
+                while (currentIndex >= 0 && operationList[currentIndex].canPrecede(buttonPress)) {
+                    currentIndex--;
+                }
+                if (currentIndex < 0) {
+                    return null;
+                } else if (operationList[currentIndex].canReplace(buttonPress)) {
+                    operationList[currentIndex] = new ButtonPressOperationStage(buttonPress);
+                } else if (operationList[currentIndex].canAppend(buttonPress)) {
+                    operationList[currentIndex].appendButtonPress(buttonPress);
+                } else if (operationList[currentIndex].canFollow(buttonPress)) {
+                    operationList.push(new ButtonPressOperationStage(buttonPress));
+                }
+                return validateOperationList();
+            };
 
             this.getDisplayObject = function() {
                 if (operationList.length < 1) {
@@ -180,6 +208,52 @@ function CalculatorController () {
                 }
             };
 
+            function validateOperationList () {
+                if (getLastOperation().getOperationType() != 'operator') {
+                    return null;
+                }
+                if (getLastOperation().getOperatorType() != 'binary') {
+                    return null;
+                }
+                if (getLastOperation().getValue() != '=') {
+                    operationList.push(new CopyOperationStage(operationList[operationList.length - 2]));
+                    return null;
+                }
+                return evaluateOperationList();
+            }
+
+            function evaluateOperationList() {
+                while (operationList.length > 2) {
+                    for (var i=0; i < operationList.length; i++) {
+                        if (operationList[i].getOperationType() == 'operator') {
+                            if (operationList[i].getOperatorType() == 'binary') {
+                                var operation = operationList.slice(i-1,i+2);
+                                var newOperation = evaluateBinaryOperation(operation);
+                                operationList.splice(i-1, 3, newOperation);
+                                break;
+                            } else {
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            function evaluateBinaryOperation(operatorList) {
+                operand1 = parseFloat(operatorList[0].getValue());
+                operand2 = parseFloat(operatorList[2].getValue());
+                switch (operatorList[1].getValue()) {
+                    case '+':
+                        return new OperationStage((operand1 + operand2) + '', 'operand', 'implicit');
+                    case '-':
+                        return new OperationStage((operand1 - operand2) + '', 'operand', 'implicit');
+                    case '×':
+                        return new OperationStage((operand1 * operand2) + '', 'operand', 'implicit');
+                    case '÷':
+                        return new OperationStage((operand1 / operand2) + '', 'operand', 'implicit');
+                }
+            }
+
             function getLastOperation(){
                 if (operationList.length < 1) {
                     return undefined;
@@ -198,40 +272,106 @@ function CalculatorController () {
         }
 
         function OperationStage (value, operationType, creationType) {
+            var operatorType;
+            var operatorPriority;
+            if (operationType == 'operand') {
+                operatorType = null;
+            } else if (operationType == 'operator') {
+                switch (value) {
+                    case '!':
+                        operatorType = 'unary';
+                        break;
+                    case '=':
+                    case '+':
+                    case '-':
+                    case '×':
+                    case '÷':
+                        operatorType = 'binary';
+                        break;
+                }
+                switch (value) {
+                    case '(':
+                    case ')':
+                        operatorPriority = 4;
+                        break;
+                    case '×':
+                    case '÷':
+                        operatorPriority = 2;
+                        break;
+                    case '+':
+                    case '-':
+                        operatorPriority = 1;
+                        break;
+                    case '=':
+                        operatorPriority = 0;
+                        break;
+                }
+            }
+
             this.appendButtonPress = function(buttonPress) {
-                if (buttonPress.getOperationType() == 'operand') {
-                    if (operationType == 'operand') {
-                        if (creationType == 'explicit') {
-                            value += buttonPress.getString();
-                            return 'append';
-                        } else if (creationType == 'implicit') {
-                            value = buttonPress.getString();
-                            if (buttonPress.getString() !== '0') {
-                                creationType = 'explicit';
+                value += buttonPress.getString();
+                return null;
+            };
+
+            this.canPrecede = function(buttonPress) {
+                if (buttonPress.getOperationType() != 'operator') {
+                    return false;
+                } else if (this.getOperationType() != 'operand') {
+                    return false;
+                } else if (this.getCreationType() != 'implicit') {
+                    return false;
+                }
+                return true;
+            };
+
+            this.canReplace = function(buttonPress) {
+                if (this.getOperationType() != buttonPress.getOperationType()) {
+                    return false;
+                }
+                switch (this.getOperationType()) {
+                    case 'operand':
+                        if (this.getCreationType() != 'implicit') {
+                            if (this.getValue() == '0') {
+                                return true;
                             }
-                            return 'overwrite';
-                        }
-                    } else {
-                        return 'new operation : operand, last stage : not operand';
-                    }
-                } else if (buttonPress.getOperationType() == 'operator') {
-                    if (operationType == 'operand') {
-                        if (creationType == 'implicit') {
-                            return 'previous';
-                        } else if (creationType == 'explicit') {
                             return false;
                         }
-                    } else if (operationType == 'operator') {
-                        value = buttonPress.getString();
-                        return 'overwrite';
-                    }
+                        return true;
+                        break;
+                    case 'operator':
+                        return true;
+                        break;
+                    default:
+                        return false;
                 }
-                    };
+            };
+
+            this.canAppend = function(buttonPress) {
+                if (this.getOperationType() != 'operand' || buttonPress.getOperationType() != 'operand') {
+                    return false;
+                }
+                return true;
+            };
+
+            this.canFollow = function(buttonPress) {
+                var isButtonPressOperand = (buttonPress.getOperationType()=='operand');
+                var isLastOperatorBinaryOperator = ((this.getOperationType()=='operator') && (this.getOperatorType()=='binary'));
+                return (isButtonPressOperand == isLastOperatorBinaryOperator);
+                //  Only operands can follow binary operators.
+                //  Only operators can follow operands and unary operators.
+            };
+
             this.getValue = function() {
                 return value;
             };
             this.getOperationType = function() {
                 return operationType;
+            };
+            this.getOperatorType = function() {
+                return operatorType;
+            };
+            this.getOperatorPriority = function() {
+                return operatorPriority;
             };
             this.getCreationType = function() {
                 return creationType;
@@ -249,6 +389,10 @@ function CalculatorController () {
         }
         function CopyOperationStage(referenceOperationStage) {
             OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), 'implicit');
+        }
+
+        function addNewOperand(operandButtonPress) {
+            currentOperationList.addNewOperand(operandButtonPress);
         }
 
         function clearCurrentEntry() {
