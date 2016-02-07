@@ -439,13 +439,30 @@ function CalculatorController () {
         this.emptyDisplay = function() {
             $('#operation-list').text('');
             $('#operation-current').text('');
+            $('#operation-history').html('');
         };
         this.updateDisplay = function(memoryDisplayObject) {
             //  Display current operation and last operation set
-            $('#operation-list').text(memoryDisplayObject[0][0]);
-            $('#operation-history').text(memoryDisplayObject[0][1]);
+            $('#operation-current').text(memoryDisplayObject[0][0]);
+            $('#operation-list').text(memoryDisplayObject[0][1]);
             //  Display completed operation history
             //not yet implemented
+            for (var i = 0; i < memoryDisplayObject[1].length; i++) {
+                var currentLength = memoryDisplayObject[1][i].length;
+                if (currentLength >= 2) {
+                    $('#operation-history').append(
+                        $('<div>',{
+                            class: 'display-md',
+                            text: memoryDisplayObject[1][i][1]
+                        }),
+                        $('<div>', {
+                            class: 'display-lg',
+                            text: memoryDisplayObject[1][i][0]
+                        })
+                    );
+                }
+            }
+
         }
     }
     //  Close DisplayController constructor
