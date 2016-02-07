@@ -68,6 +68,7 @@ function CalculatorController () {
                 case '7':
                 case '8':
                 case '9':
+                case '.':
                     return new OperandPress(buttonString);
                 case '+':
                 case '-':
@@ -284,6 +285,9 @@ function CalculatorController () {
             var operatorType;
             var operatorPriority;
             if (operationType == 'operand') {
+                if (value == '.') {
+                    value = '0.';
+                }
                 operatorType = null;
             } else if (operationType == 'operator') {
                 switch (value) {
@@ -342,7 +346,7 @@ function CalculatorController () {
                 switch (this.getOperationType()) {
                     case 'operand':
                         if (this.getCreationType() != 'implicit') {
-                            if (this.getValue() == '0') {
+                            if (this.getValue() == '0' && buttonPress.getString() != '.') {
                                 return true;
                             }
                             return false;
@@ -362,6 +366,9 @@ function CalculatorController () {
 
             this.canAppend = function(buttonPress) {
                 if (this.getOperationType() != 'operand' || buttonPress.getOperationType() != 'operand') {
+                    return false;
+                }
+                if ((buttonPress.getString() == '.') && (this.getValue().indexOf('.') >= 0)) {
                     return false;
                 }
                 return true;
