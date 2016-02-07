@@ -168,7 +168,7 @@ function CalculatorController () {
 
             this.addButtonPress = function(buttonPress) {
                 var currentIndex = operationList.length - 1;
-                while (currentIndex >= 0 && operationList[currentIndex].canPrecede(buttonPress)) {
+                while (currentIndex > 0 && operationList[currentIndex].canPrecede(buttonPress)) {
                     currentIndex--;
                 }
                 if (currentIndex < 0) {
@@ -329,6 +329,8 @@ function CalculatorController () {
                     return false;
                 } else if (this.getCreationType() != 'implicit') {
                     return false;
+                } else if (buttonPress.getString() == '=') {
+                    return false;
                 }
                 return true;
             };
@@ -348,7 +350,10 @@ function CalculatorController () {
                         return true;
                         break;
                     case 'operator':
-                        return true;
+                        if (buttonPress.getString() != '=') {
+                            return true;
+                        }
+                        return false;
                         break;
                     default:
                         return false;
