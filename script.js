@@ -128,7 +128,13 @@ function CalculatorController () {
                     break;
                 case 'operand':
                 case 'operator':
-                    currentOperationList.addButtonPress(buttonPress);
+                    var validate = currentOperationList.addOperation(buttonPress);
+                    if (validate) {
+                        var evaluate = currentOperationList.validateOperationList();
+                    }
+                    if (evaluate) {
+                        currentOperationList.evaluateOperationList();
+                    }
                     break;
                 default:
                     return [['ERROR','invalid operation type'],[]];
@@ -167,13 +173,13 @@ function CalculatorController () {
                 operationList = [new CopyOperationStage(lastOperation), 'implicit'];
             }
 
-            this.addButtonPress = function(buttonPress) {
+            this.addOperation = function(buttonPress) {
                 var currentIndex = operationList.length - 1;
                 while (currentIndex > 0 && operationList[currentIndex].canPrecede(buttonPress)) {
                     currentIndex--;
                 }
                 if (currentIndex < 0) {
-                    return null;
+                    return false;
                 } else if (operationList[currentIndex].canReplace(buttonPress)) {
                     operationList[currentIndex] = new ButtonPressOperationStage(buttonPress);
                 } else if (operationList[currentIndex].canAppend(buttonPress)) {
@@ -181,7 +187,7 @@ function CalculatorController () {
                 } else if (operationList[currentIndex].canFollow(buttonPress)) {
                     operationList.push(new ButtonPressOperationStage(buttonPress));
                 }
-                return validateOperationList();
+                return true;
             };
 
             this.getDisplayObject = function() {
@@ -205,21 +211,21 @@ function CalculatorController () {
                 }
             };
 
-            function validateOperationList () {
+            this.validateOperationList = function() {
                 if (getLastOperation().getOperationType() != 'operator') {
-                    return null;
+                    return false;
                 }
                 if (getLastOperation().getOperatorType() != 'binary') {
-                    return null;
+                    return false;
                 }
                 operationList.push(new CopyOperationStage(operationList[operationList.length - 2], 'implicit'));
                 if (operationList[operationList.length - 2].getValue() != '=') {
-                    return null;
+                    return false;
                 }
-                return evaluateOperationList();
-            }
+                return true;
+            };
 
-            function evaluateOperationList() {
+            this.evaluateOperationList = function() {
                 var operationListClone = cloneOperationList(operationList);
                 while (operationListClone.length > 3) {
                     for (var i=0; i < operationListClone.length; i++) {
@@ -239,7 +245,7 @@ function CalculatorController () {
                 operationHistory.archiveOperationList(operationList);
                 operationList = [operationListClone[0]];
                 return null;
-            }
+            };
 
             function evaluateBinaryOperation(operatorList) {
                 operand1 = parseFloat(operatorList[0].getValue());
