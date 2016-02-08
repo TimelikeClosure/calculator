@@ -133,7 +133,11 @@ function CalculatorController () {
                         var evaluate = currentOperationList.validateOperationList();
                     }
                     if (evaluate) {
+                        var previousOperationList = currentOperationList;
+                        currentOperationList = cloneOperationList(previousOperationList);
                         currentOperationList.evaluateOperationList();
+                        previousOperationList.setLastOperation(currentOperationList.getLastOperation());
+                        operationHistory.archiveOperationList(previousOperationList);
                     }
                     break;
                 default:
@@ -142,6 +146,10 @@ function CalculatorController () {
 
             return [currentOperationList.getDisplayObject(), operationHistory.getDisplayObject()];
         };
+
+        function cloneOperationList (operationList) {
+            return new OperationList(operationList.cloneOperationList());
+        }
 
         function OperationHistory () {
             var history = [];
@@ -153,13 +161,7 @@ function CalculatorController () {
             this.getDisplayObject = function() {
                 var displayObject = [];
                 for (var i = history.length - 1; i >= 0; i--) {
-                    if (history[i].length < 1) {
-                        displayObject.push(['null','']);
-                    } else {
-                        var operationListClone = history[i].slice();
-                        var lastOperation = (operationListClone.pop()).getValue();
-                        displayObject.push([lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')]);
-                    }
+                    displayObject.push(history[i].getDisplayObject());
                 }
                 return displayObject;
             };
@@ -169,8 +171,10 @@ function CalculatorController () {
             var operationList;
             if (lastOperation === undefined) {
                 operationList = [new ZeroOperationStage()];
-            } else {
+            } else if (!(Array.isArray(lastOperation))) {
                 operationList = [new CopyOperationStage(lastOperation), 'implicit'];
+            } else {
+                operationList = lastOperation;
             }
 
             this.addOperation = function(buttonPress) {
@@ -201,10 +205,10 @@ function CalculatorController () {
             };
 
             this.clearEntry = function() {
-                if (getLastOperation().getCreationType() == 'explicit' ||
-                    getLastOperation().getOperationType() != 'operand' ||
-                    getLastOperation().getValue() !== '0') {
-                    setLastOperation(new ZeroOperationStage());
+                if (this.getLastOperation().getCreationType() == 'explicit' ||
+                    this.getLastOperation().getOperationType() != 'operand' ||
+                    this.getLastOperation().getValue() !== '0') {
+                    this.setLastOperation(new ZeroOperationStage());
                     return true;
                 } else {
                     return false;
@@ -212,10 +216,10 @@ function CalculatorController () {
             };
 
             this.validateOperationList = function() {
-                if (getLastOperation().getOperationType() != 'operator') {
+                if (this.getLastOperation().getOperationType() != 'operator') {
                     return false;
                 }
-                if (getLastOperation().getOperatorType() != 'binary') {
+                if (this.getLastOperation().getOperatorType() != 'binary') {
                     return false;
                 }
                 operationList.push(new CopyOperationStage(operationList[operationList.length - 2], 'implicit'));
@@ -226,14 +230,13 @@ function CalculatorController () {
             };
 
             this.evaluateOperationList = function() {
-                var operationListClone = cloneOperationList(operationList);
-                while (operationListClone.length > 3) {
-                    for (var i=0; i < operationListClone.length; i++) {
-                        if (operationListClone[i].getOperationType() == 'operator') {
-                            if (operationListClone[i].getOperatorType() == 'binary') {
-                                var operation = operationListClone.slice(i-1,i+2);
+                while (operationList.length > 3) {
+                    for (var i=0; i < operationList.length; i++) {
+                        if (operationList[i].getOperationType() == 'operator') {
+                            if (operationList[i].getOperatorType() == 'binary') {
+                                var operation = operationList.slice(i-1,i+2);
                                 var newOperation = evaluateBinaryOperation(operation);
-                                operationListClone.splice(i-1, 3, newOperation);
+                                operationList.splice(i-1, 3, newOperation);
                                 break;
                             } else {
 
@@ -241,9 +244,7 @@ function CalculatorController () {
                         }
                     }
                 }
-                operationList[operationList.length - 1] = new CopyOperationStage(operationListClone[0], 'implicit');
-                operationHistory.archiveOperationList(operationList);
-                operationList = [operationListClone[0]];
+                operationList = [operationList[0]];
                 return null;
             };
 
@@ -275,28 +276,28 @@ function CalculatorController () {
                 }
             }
 
-            function cloneOperationList (operationList) {
+            this.cloneOperationList = function () {
                 var listClone = [];
                 for (var i = 0; i < operationList.length; i++) {
                     listClone.push(new CopyOperationStage(operationList[i]));
                 }
                 return listClone;
-            }
+            };
 
-            function getLastOperation(){
+            this.getLastOperation = function(){
                 if (operationList.length < 1) {
                     return undefined;
                 }
                 return operationList[operationList.length - 1];
-            }
+            };
 
-            function setLastOperation(newEntry) {
+            this.setLastOperation = function(newEntry) {
                 if (operationList.length >= 1) {
                     operationList[operationList.length - 1] = newEntry;
                 } else {
                     operationList.push(newEntry);
                 }
-            }
+            };
 
         }
 
