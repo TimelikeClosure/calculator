@@ -11,12 +11,23 @@
 
 /*Begin styling calculator main*/
 .calc-main {
-    max-width: 700px;
+    width: 596px;
     padding: 20px 40px;
 }
 /*Close styling calculator main*/
 
 /*Begin styling calculator display*/
+.outputs.jumbotron {
+    width: 100%;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+.display-sm {
+    font-size: 13px;
+    text-align: right;
+    font-family: "Lucida Console", Monaco, monospace;
+    min-height: 20px;
+}
 .display-md {
     font-size: 20px;
     text-align: right;
@@ -24,10 +35,11 @@
     min-height: 29px;
 }
 .display-lg {
-    font-size: 40px;
+    font-size: 34px;
     text-align: right;
     font-family: "Lucida Console", Monaco, monospace;
     height: 57px;
+    overflow: hidden;
 }
 /*Close styling calculator display*/
 
@@ -45,6 +57,7 @@
 
 /*Begin styling calculator history*/
 .calc-history {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -54,9 +67,15 @@
 
 .calc-history .jumbotron {
     flex-grow: 1;
+    max-height: 832px;
+    overflow: auto;
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 991px) {
+    .calc-main {
+        width: auto;
+        max-width: 596px;
+    }
     .calc-history {
         display: none;
     }

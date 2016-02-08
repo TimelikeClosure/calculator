@@ -244,15 +244,28 @@ function CalculatorController () {
             function evaluateBinaryOperation(operatorList) {
                 operand1 = parseFloat(operatorList[0].getValue());
                 operand2 = parseFloat(operatorList[2].getValue());
+                var result;
                 switch (operatorList[1].getValue()) {
                     case '+':
-                        return new OperationStage((operand1 + operand2) + '', 'operand', 'implicit');
+                        result = parseFloat(
+                            (operand1 + operand2).toPrecision(10) // perform operation, then set maximum significant figures
+                        ).toString(); // remove trailing zeroes
+                        return new OperationStage(result, 'operand', 'implicit');
                     case '-':
-                        return new OperationStage((operand1 - operand2) + '', 'operand', 'implicit');
+                        result = parseFloat(
+                            (operand1 - operand2).toPrecision(10) // perform operation, then set maximum significant figures
+                        ).toString(); // remove trailing zeroes
+                        return new OperationStage(result, 'operand', 'implicit');
                     case '×':
-                        return new OperationStage((operand1 * operand2) + '', 'operand', 'implicit');
+                        result = parseFloat(
+                            (operand1 * operand2).toPrecision(10) // perform operation, then set maximum significant figures
+                        ).toString(); // remove trailing zeroes
+                        return new OperationStage(result, 'operand', 'implicit');
                     case '÷':
-                        return new OperationStage((operand1 / operand2) + '', 'operand', 'implicit');
+                        result = parseFloat(
+                            (operand1 / operand2).toPrecision(10) // perform operation, then set maximum significant figures
+                        ).toString(); // remove trailing zeroes
+                        return new OperationStage(result, 'operand', 'implicit');
                 }
             }
 
@@ -371,6 +384,9 @@ function CalculatorController () {
                 if ((buttonPress.getString() == '.') && (this.getValue().indexOf('.') >= 0)) {
                     return false;
                 }
+                if (this.getValue().length - (this.getValue().indexOf('.') > 0) >= 10) {
+                    return false;
+                }
                 return true;
             };
 
@@ -452,11 +468,11 @@ function CalculatorController () {
                 if (currentLength >= 2) {
                     $('#operation-history').append(
                         $('<div>',{
-                            class: 'display-md',
+                            class: 'display-sm',
                             text: memoryDisplayObject[1][i][1]
                         }),
                         $('<div>', {
-                            class: 'display-lg',
+                            class: 'display-md',
                             text: memoryDisplayObject[1][i][0]
                         })
                     );
