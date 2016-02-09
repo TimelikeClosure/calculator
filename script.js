@@ -47,6 +47,7 @@ function CalculatorController () {
      * @constructor
      */
     function ButtonsController () {
+
         this.getButtonPressObject = function(buttonDOMObject) {
             var buttonString = getButtonPressStringFromDOM(buttonDOMObject);
             return getButtonPressObjectFromString(buttonString);
@@ -148,7 +149,7 @@ function CalculatorController () {
         };
 
         function cloneOperationList (operationList) {
-            return new OperationList(operationList.cloneOperationList());
+            return new OperationList(operationList.cloneOperationList(), operationList.getRepeatOperator(), operationList.getRepeatOperand());
         }
 
         function OperationHistory () {
@@ -167,7 +168,7 @@ function CalculatorController () {
             };
         }
 
-        function OperationList (lastOperation) {
+        function OperationList (lastOperation, repeatOperator, repeatOperand) {
             var operationList;
             if (lastOperation === undefined) {
                 operationList = [new ZeroOperationStage()];
@@ -175,6 +176,12 @@ function CalculatorController () {
                 operationList = [new CopyOperationStage(lastOperation), 'implicit'];
             } else {
                 operationList = lastOperation;
+            }
+            if (repeatOperator === undefined) {
+                repeatOperator = null;
+            }
+            if (repeatOperand === undefined) {
+                repeatOperand = null;
             }
 
             this.addOperation = function(buttonPress) {
@@ -186,10 +193,13 @@ function CalculatorController () {
                     return false;
                 } else if (operationList[currentIndex].canReplace(buttonPress)) {
                     operationList[currentIndex] = new ButtonPressOperationStage(buttonPress);
+                    setRepeatOperation(operationList[currentIndex]);
                 } else if (operationList[currentIndex].canAppend(buttonPress)) {
                     operationList[currentIndex].appendButtonPress(buttonPress);
+                    setRepeatOperation(operationList[currentIndex]);
                 } else if (operationList[currentIndex].canFollow(buttonPress)) {
                     operationList.push(new ButtonPressOperationStage(buttonPress));
+                    setRepeatOperation(operationList[currentIndex + 1]);
                 }
                 return true;
             };
@@ -209,6 +219,9 @@ function CalculatorController () {
                     this.getLastOperation().getOperationType() != 'operand' ||
                     this.getLastOperation().getValue() !== '0') {
                     this.setLastOperation(new ZeroOperationStage());
+                    if (operationList.length > 1) {
+                        setRepeatOperation(this.getLastOperation());
+                    }
                     return true;
                 } else {
                     return false;
@@ -224,7 +237,13 @@ function CalculatorController () {
                 }
                 operationList.push(new CopyOperationStage(operationList[operationList.length - 2], 'implicit'));
                 if (operationList[operationList.length - 2].getValue() != '=') {
+                    setRepeatOperation(operationList[operationList.length - 1]);
                     return false;
+                }
+                if (operationList.length == 3) {
+                    if (repeatOperand !== null && repeatOperator !== null) {
+                        operationList.splice(1, 0, repeatOperator, repeatOperand);
+                    }
                 }
                 return true;
             };
@@ -298,6 +317,34 @@ function CalculatorController () {
                     operationList.push(newEntry);
                 }
             };
+
+            this.getRepeatOperator = function() {
+                return repeatOperator;
+            };
+
+            this.getRepeatOperand = function () {
+                return repeatOperand;
+            };
+
+            function setRepeatOperation(operation) {
+                if (operation === null) {
+                    repeatOperand = null;
+                    repeatOperator = null;
+                    return null;
+                } else if (operation.getOperationType() == 'operand') {
+                    repeatOperand = operation;
+                    return null;
+                } else if (operation.getOperatorType() == 'unary') {
+                    repeatOperand = null;
+                    repeatOperator = null;
+                    return null;
+                } else if (operation.getValue() != '='){
+                    repeatOperator = operation;
+                    return null;
+                } else {
+                    return null;
+                }
+            }
 
         }
 
@@ -459,17 +506,30 @@ function CalculatorController () {
      * @constructor
      */
     function DisplayController () {
+
+        //  Begin emptyDisplay method
+        /**
+         * Clears the displays
+         */
         this.emptyDisplay = function() {
             $('#operation-list').text('');
             $('#operation-current').text('');
             $('#operation-history').html('');
         };
+        //  Close emptyDisplay method
+
+        //  Begin updateDisplay method
+        /**
+         * Takes the given display object and updates the relevant displays
+         * @param {Array} memoryDisplayObject
+         */
         this.updateDisplay = function(memoryDisplayObject) {
-            //  Display current operation and last operation set
+
+            //  Display current operation and operation list in main display
             $('#operation-current').text(memoryDisplayObject[0][0]);
             $('#operation-list').text(memoryDisplayObject[0][1]);
-            //  Display completed operation history
-            //not yet implemented
+
+            //  Begin displaying completed operation history in history display
             for (var i = 0; i < memoryDisplayObject[1].length; i++) {
                 var currentLength = memoryDisplayObject[1][i].length;
                 if (currentLength >= 2) {
@@ -485,9 +545,12 @@ function CalculatorController () {
                     );
                 }
             }
+            //  Close displaying completed operation history in history display
+        };
+        //  Close updateDisplay method
 
-        }
     }
     //  Close DisplayController constructor
+
 }
 //  Close CalculatorController constructor
