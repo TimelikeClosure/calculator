@@ -33,10 +33,10 @@ function CalculatorController () {
      * Updates memory and display from button presses
      * @param buttonDOMObject
      */
-    this.addButtonPress = function(buttonDOMObject) {
+    this.addButtonPress = function($buttonDOMObject) {
         display.emptyDisplay();
-        var buttonPress = buttons.getButtonPressObject(buttonDOMObject);
-        var memoryDisplayObject = memory.applyButtonPress(buttonPress);
+        var buttonPress = buttons.getButtonPressObject($buttonDOMObject);
+        var memoryDisplayObject = memory.applyInputObject(buttonPress);
         display.updateDisplay(memoryDisplayObject);
     };
     //  Close addButtonPress controller method
@@ -48,15 +48,33 @@ function CalculatorController () {
      */
     function ButtonsController () {
 
-        this.getButtonPressObject = function(buttonDOMObject) {
-            var buttonString = getButtonPressStringFromDOM(buttonDOMObject);
+        //  Begin getButtonPressObject method
+        /**
+         * Given a jQuery selector, generates a ButtonPress object for use by the memory controller.
+         * @param {Object} $buttonDOMObject
+         * @returns {Object}
+         */
+        this.getButtonPressObject = function($buttonDOMObject) {
+            var buttonString = getButtonPressStringFromDOM($buttonDOMObject);
             return getButtonPressObjectFromString(buttonString);
         };
+        //  Close getButtonPressObject method
 
-        function getButtonPressStringFromDOM(buttonDOMObject){
-            return buttonDOMObject.text();
+        //  Begin getButtonPressObject subroutines
+        /**
+         * Given a jQuery selector from a button press, returns the string containing the represented operation.
+         * @param {Object} $buttonDOMObject
+         * @returns {string}
+         */
+        function getButtonPressStringFromDOM($buttonDOMObject){
+            return $buttonDOMObject.text();
         }
 
+        /**
+         * Given an operation string, returns a ButtonPress object.
+         * @param {string} buttonString
+         * @returns {Object}
+         */
         function getButtonPressObjectFromString(buttonString){
             switch (buttonString) {
                 case '0':
@@ -84,7 +102,15 @@ function CalculatorController () {
                     return undefined;
             }
         }
+        //  Close getButtonPressObject subroutines
 
+        //  Begin ButtonPress object constructors
+        /**
+         * Constructs a ButtonPress object for use by the memoryController.
+         * @param {string} buttonString
+         * @param {string} operationType
+         * @constructor
+         */
         function ButtonPress(buttonString, operationType){
             this.getString = function() {
                 return buttonString;
@@ -93,15 +119,17 @@ function CalculatorController () {
                 return operationType;
             };
         }
-        function OperandPress(buttonString){
+        function OperandPress(buttonString){ // Creates ButtonPress object of operationType "operand"
             ButtonPress.call(this, buttonString, 'operand');
         }
-        function OperatorPress(buttonString){
+        function OperatorPress(buttonString){ // Creates ButtonPress object of operationType "operator"
             ButtonPress.call(this, buttonString, 'operator');
         }
-        function SpecialPress(buttonString){
+        function SpecialPress(buttonString){ // Creates ButtonPress object of operationType "special"
             ButtonPress.call(this, buttonString, 'special');
         }
+        //  Close ButtonPress object constructors
+
     }
     //  Close ButtonsController constructor
 
@@ -113,10 +141,10 @@ function CalculatorController () {
     function MemoryController () {
         var operationHistory = new OperationHistory();
         var currentOperationList = new OperationList();
-        this.applyButtonPress = function(buttonPress) {
-            switch (buttonPress.getOperationType()) {
+        this.applyInputObject = function(inputObject) {
+            switch (inputObject.getOperationType()) {
                 case 'special':
-                    switch (buttonPress.getString()) {
+                    switch (inputObject.getString()) {
                         case 'CE':
                             clearCurrentEntry();
                             break;
@@ -129,7 +157,7 @@ function CalculatorController () {
                     break;
                 case 'operand':
                 case 'operator':
-                    var validate = currentOperationList.addOperation(buttonPress);
+                    var validate = currentOperationList.addOperation(inputObject);
                     if (validate) {
                         var evaluate = currentOperationList.validateOperationList();
                     }
@@ -184,21 +212,21 @@ function CalculatorController () {
                 repeatOperand = null;
             }
 
-            this.addOperation = function(buttonPress) {
+            this.addOperation = function(inputObject) {
                 var currentIndex = operationList.length - 1;
-                while (currentIndex > 0 && operationList[currentIndex].canPrecede(buttonPress)) {
+                while (currentIndex > 0 && operationList[currentIndex].canPrecede(inputObject)) {
                     currentIndex--;
                 }
                 if (currentIndex < 0) {
                     return false;
-                } else if (operationList[currentIndex].canReplace(buttonPress)) {
-                    operationList[currentIndex] = new ButtonPressOperationStage(buttonPress);
+                } else if (operationList[currentIndex].canReplace(inputObject)) {
+                    operationList[currentIndex] = new InputObjectOperationStage(inputObject);
                     setRepeatOperation(operationList[currentIndex]);
-                } else if (operationList[currentIndex].canAppend(buttonPress)) {
-                    operationList[currentIndex].appendButtonPress(buttonPress);
+                } else if (operationList[currentIndex].canAppend(inputObject)) {
+                    operationList[currentIndex].appendinputObject(inputObject);
                     setRepeatOperation(operationList[currentIndex]);
-                } else if (operationList[currentIndex].canFollow(buttonPress)) {
-                    operationList.push(new ButtonPressOperationStage(buttonPress));
+                } else if (operationList[currentIndex].canFollow(inputObject)) {
+                    operationList.push(new InputObjectOperationStage(inputObject));
                     setRepeatOperation(operationList[currentIndex + 1]);
                 }
                 return true;
@@ -435,35 +463,35 @@ function CalculatorController () {
             }
             //  Close initial private variable assignment
 
-            //  Begin appendButtonPress method
-            this.appendButtonPress = function(buttonPress) {
-                value += buttonPress.getString();
+            //  Begin appendinputObject method
+            this.appendinputObject = function(inputObject) {
+                value += inputObject.getString();
                 return null;
             };
-            //  Close appendButtonPress method
+            //  Close appendinputObject method
 
-            //  Begin buttonPress test methods
-            this.canPrecede = function(buttonPress) {
-                if (buttonPress.getOperationType() != 'operator') {
+            //  Begin inputObject test methods
+            this.canPrecede = function(inputObject) {
+                if (inputObject.getOperationType() != 'operator') {
                     return false;
                 } else if (this.getOperationType() != 'operand') {
                     return false;
                 } else if (this.getCreationType() != 'implicit') {
                     return false;
-                } else if (buttonPress.getString() == '=') {
+                } else if (inputObject.getString() == '=') {
                     return false;
                 }
                 return true;
             };
 
-            this.canReplace = function(buttonPress) {
-                if (this.getOperationType() != buttonPress.getOperationType()) {
+            this.canReplace = function(inputObject) {
+                if (this.getOperationType() != inputObject.getOperationType()) {
                     return false;
                 }
                 switch (this.getOperationType()) {
                     case 'operand':
                         if (this.getCreationType() != 'implicit') {
-                            if (this.getValue() == '0' && buttonPress.getString() != '.') {
+                            if (this.getValue() == '0' && inputObject.getString() != '.') {
                                 return true;
                             }
                             return false;
@@ -471,7 +499,7 @@ function CalculatorController () {
                         return true;
                         break;
                     case 'operator':
-                        if (buttonPress.getString() != '=') {
+                        if (inputObject.getString() != '=') {
                             return true;
                         }
                         return false;
@@ -481,11 +509,11 @@ function CalculatorController () {
                 }
             };
 
-            this.canAppend = function(buttonPress) {
-                if (this.getOperationType() != 'operand' || buttonPress.getOperationType() != 'operand') {
+            this.canAppend = function(inputObject) {
+                if (this.getOperationType() != 'operand' || inputObject.getOperationType() != 'operand') {
                     return false;
                 }
-                if ((buttonPress.getString() == '.') && (this.getValue().indexOf('.') >= 0)) {
+                if ((inputObject.getString() == '.') && (this.getValue().indexOf('.') >= 0)) {
                     return false;
                 }
                 if (this.getValue().length - (this.getValue().indexOf('.') > 0) >= 10) {
@@ -494,14 +522,14 @@ function CalculatorController () {
                 return true;
             };
 
-            this.canFollow = function(buttonPress) {
-                var isButtonPressOperand = (buttonPress.getOperationType()=='operand');
+            this.canFollow = function(inputObject) {
+                var isInputObjectOperand = (inputObject.getOperationType()=='operand');
                 var isLastOperatorBinaryOperator = ((this.getOperationType()=='operator') && (this.getOperatorType()=='binary'));
-                return (isButtonPressOperand == isLastOperatorBinaryOperator);
+                return (isInputObjectOperand == isLastOperatorBinaryOperator);
                 //  Only operands can follow binary operators.
                 //  Only operators can follow operands and unary operators.
             };
-            //  Close buttonPress test methods
+            //  Close inputObject test methods
 
             //  Begin Get methods
             this.getValue = function() {
@@ -532,16 +560,14 @@ function CalculatorController () {
         function ZeroOperationStage () {
             OperationStage.call(this, '0', 'operand', 'implicit');
         }
-
         /**
-         * Generates an explicit OperationStage object from a ButtonPress object
-         * @param {Object}  buttonPress
+         * Generates an explicit OperationStage object from a InputObject object
+         * @param {Object}  inputObject
          * @constructor
          */
-        function ButtonPressOperationStage(buttonPress) {
-            OperationStage.call(this, buttonPress.getString(), buttonPress.getOperationType(), 'explicit');
+        function InputObjectOperationStage(inputObject) {
+            OperationStage.call(this, inputObject.getString(), inputObject.getOperationType(), 'explicit');
         }
-
         /**
          * Generates an OperationStage object, copying from another OperationStage object. If no creationType is specified,
          * takes on the same value as the reference object.
@@ -624,6 +650,7 @@ function CalculatorController () {
                 }
             }
             //  Close displaying completed operation history in history display
+
         };
         //  Close updateDisplay method
 
