@@ -255,17 +255,19 @@ function CalculatorController () {
                     for (var i=0; i < runningList.length-1; i++) {
                         if (runningList[i].getOperationType() == 'operator') {
                             if (runningList[i].getOperatorType() == 'binary' && i < runningList.length - 2) {
-                                /*if (runningList[i].getOperatorPriority() >= runningList[i+2].getOperatorPriority()) { // enforce order of operations
-                                 var operation = runningList.slice(i - 1, i + 2);
-                                 var newOperation = evaluateBinaryOperation(operation);
-                                 runningList.splice(i - 1, 3, newOperation);
-                                 break;
-                                 }*/
-                                var operation = runningList.slice(i - 1, i + 2);
+                                if (runningList[i].getOperatorPriority() >= runningList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
+                                    var operation = runningList.slice(i - 1, i + 2);
+                                    var newOperation = evaluateBinaryOperation(operation);
+                                    runningList.splice(i - 1, 3, newOperation);
+                                    break;
+                                } else if (i == runningList.length - 3) {
+                                    return [runningList[runningList.length - 2]];
+                                }
+                                /*var operation = runningList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
                                 var newOperation = evaluateBinaryOperation(operation);
                                 runningList.splice(i - 1, 3, newOperation);
-                                break;
-                            } else {
+                                break;*/
+                            } else if (runningList[i].getOperatorType() == 'unary') {
 
                             }
                         }
@@ -279,17 +281,17 @@ function CalculatorController () {
                     for (var i=0; i < operationList.length; i++) {
                         if (operationList[i].getOperationType() == 'operator') {
                             if (operationList[i].getOperatorType() == 'binary') {
-                                /*if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce order of operations
+                                if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
                                     var operation = operationList.slice(i - 1, i + 2);
                                     var newOperation = evaluateBinaryOperation(operation);
                                     operationList.splice(i - 1, 3, newOperation);
                                     break;
-                                }*/
-                                var operation = operationList.slice(i - 1, i + 2);
+                                }
+                                /*var operation = operationList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
                                 var newOperation = evaluateBinaryOperation(operation);
                                 operationList.splice(i - 1, 3, newOperation);
-                                break;
-                            } else {
+                                break;*/
+                            } else if (operationList[i].getOperatorType() == 'unary') {
 
                             }
                         }
@@ -380,14 +382,26 @@ function CalculatorController () {
 
         }
 
+        //  Begin OperationStage constructor
+        /**
+         * Constructor for OperationStage objects. These contain a single operand or operator, type information, and
+         * circumstances of creation.
+         * @param {string} value
+         * @param {string} operationType
+         * @param {string} creationType
+         * @constructor
+         */
         function OperationStage (value, operationType, creationType) {
-            var operatorType;
-            var operatorPriority;
+
+            //  Begin initial private variable assignment
+            var operatorType; // "unary", "binary", or "parenthesis"
+            var operatorPriority; // Used for order of operations. Higher number takes higher priority. "=" set at 0.
             if (operationType == 'operand') {
-                if (value == '.') {
+                if (value == '.') { // New operands initiated with a decimal point are led with a zero.
                     value = '0.';
                 }
                 operatorType = null;
+                operatorPriority = null;
             } else if (operationType == 'operator') {
                 switch (value) {
                     case '!':
@@ -419,12 +433,16 @@ function CalculatorController () {
                         break;
                 }
             }
+            //  Close initial private variable assignment
 
+            //  Begin appendButtonPress method
             this.appendButtonPress = function(buttonPress) {
                 value += buttonPress.getString();
                 return null;
             };
+            //  Close appendButtonPress method
 
+            //  Begin buttonPress test methods
             this.canPrecede = function(buttonPress) {
                 if (buttonPress.getOperationType() != 'operator') {
                     return false;
@@ -483,7 +501,9 @@ function CalculatorController () {
                 //  Only operands can follow binary operators.
                 //  Only operators can follow operands and unary operators.
             };
+            //  Close buttonPress test methods
 
+            //  Begin Get methods
             this.getValue = function() {
                 return value;
             };
@@ -499,42 +519,68 @@ function CalculatorController () {
             this.getCreationType = function() {
                 return creationType;
             };
-            this.makeExplicit = function() {
-                creationType = "explicit";
-                return null;
-            };
+            //  Close Get methods
+
         }
+        //  Close OperationStage constructor
+
+        //  Begin OperationStage sub-class constructors
+        /**
+         * Generates an OperationStage object with an implicit zero.
+         * @constructor
+         */
         function ZeroOperationStage () {
             OperationStage.call(this, '0', 'operand', 'implicit');
         }
+
+        /**
+         * Generates an explicit OperationStage object from a ButtonPress object
+         * @param {Object}  buttonPress
+         * @constructor
+         */
         function ButtonPressOperationStage(buttonPress) {
             OperationStage.call(this, buttonPress.getString(), buttonPress.getOperationType(), 'explicit');
         }
+
+        /**
+         * Generates an OperationStage object, copying from another OperationStage object. If no creationType is specified,
+         * takes on the same value as the reference object.
+         * @param {Object} referenceOperationStage
+         * @param {string|undefined} creationType
+         * @constructor
+         */
         function CopyOperationStage(referenceOperationStage, creationType) {
             if (creationType === undefined) {creationType = referenceOperationStage.getCreationType();}
             OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), creationType);
         }
+        //  Close OperationStage sub-class constructors
 
-        function addNewOperand(operandButtonPress) {
-            currentOperationList.addNewOperand(operandButtonPress);
-        }
-
+        //  Begin clearCurrentEntry method
+        /**
+         * Clears the most recent operand. If the most recent operand is an implicit "0", calls clearCurrentOperationList().
+         */
         function clearCurrentEntry() {
             var clearCurrentEntryResult = currentOperationList.clearEntry();
             if (!clearCurrentEntryResult) {
                 clearCurrentOperationList();
             }
         }
+        //  Close clearCurrentEntry method
 
+        //  Begin clearCurrentOperationList method
+        /**
+         * Replaces the current operation list with a new, empty one.
+         */
         function clearCurrentOperationList() {
             currentOperationList = new OperationList();
         }
+        //  Close clearCurrentOperationList method
     }
     //  Close MemoryController constructor
 
     //  Begin DisplayController constructor
     /**
-     * Constructs controller for DOM display objects
+     * Constructs controller for DOM display objects.
      * @constructor
      */
     function DisplayController () {
@@ -552,7 +598,7 @@ function CalculatorController () {
 
         //  Begin updateDisplay method
         /**
-         * Takes the given display object and updates the relevant displays
+         * Takes the given display object and updates the relevant displays.
          * @param {Array} memoryDisplayObject
          */
         this.updateDisplay = function(memoryDisplayObject) {
