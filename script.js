@@ -223,7 +223,7 @@ function CalculatorController () {
                     operationList[currentIndex] = new InputObjectOperationStage(inputObject);
                     setRepeatOperation(operationList[currentIndex]);
                 } else if (operationList[currentIndex].canAppend(inputObject)) {
-                    operationList[currentIndex].appendinputObject(inputObject);
+                    operationList[currentIndex].appendInputObject(inputObject);
                     setRepeatOperation(operationList[currentIndex]);
                 } else if (operationList[currentIndex].canFollow(inputObject)) {
                     operationList.push(new InputObjectOperationStage(inputObject));
@@ -425,7 +425,7 @@ function CalculatorController () {
             var operatorType; // "unary", "binary", or "parenthesis"
             var operatorPriority; // Used for order of operations. Higher number takes higher priority. "=" set at 0.
             if (operationType == 'operand') {
-                if (value == '.') { // New operands initiated with a decimal point are led with a zero.
+                if (value == '.') { // New OperationStages initiated with a decimal point are led with a zero.
                     value = '0.';
                 }
                 operatorType = null;
@@ -463,14 +463,24 @@ function CalculatorController () {
             }
             //  Close initial private variable assignment
 
-            //  Begin appendinputObject method
-            this.appendinputObject = function(inputObject) {
+            //  Begin appendInputObject method
+            /**
+             * Append the given inputObject to the OperationStage
+             * @param {Object} inputObject
+             * @returns {null}
+             */
+            this.appendInputObject = function(inputObject) {
                 value += inputObject.getString();
                 return null;
             };
-            //  Close appendinputObject method
+            //  Close appendInputObject method
 
             //  Begin inputObject test methods
+            /**
+             * Tests whether the inputObject can affect the OperationStage prior to the current one in an OperationList.
+             * @param {Object} inputObject
+             * @returns {boolean}
+             */
             this.canPrecede = function(inputObject) {
                 if (inputObject.getOperationType() != 'operator') {
                     return false;
@@ -483,7 +493,11 @@ function CalculatorController () {
                 }
                 return true;
             };
-
+            /**
+             * Tests whether the inputObject can replace the current OperationStage.
+             * @param {Object} inputObject
+             * @returns {boolean}
+             */
             this.canReplace = function(inputObject) {
                 if (this.getOperationType() != inputObject.getOperationType()) {
                     return false;
@@ -508,7 +522,11 @@ function CalculatorController () {
                         return false;
                 }
             };
-
+            /**
+             * Tests whether the inputObject can append to the current OperationStage.
+             * @param {Object} inputObject
+             * @returns {boolean}
+             */
             this.canAppend = function(inputObject) {
                 if (this.getOperationType() != 'operand' || inputObject.getOperationType() != 'operand') {
                     return false;
@@ -521,7 +539,11 @@ function CalculatorController () {
                 }
                 return true;
             };
-
+            /**
+             * Tests whether the inputObject can be added after the current OperationStage in an OperationList.
+             * @param {Object} inputObject
+             * @returns {boolean}
+             */
             this.canFollow = function(inputObject) {
                 var isInputObjectOperand = (inputObject.getOperationType()=='operand');
                 var isLastOperatorBinaryOperator = ((this.getOperationType()=='operator') && (this.getOperatorType()=='binary'));
