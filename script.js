@@ -235,7 +235,9 @@ function CalculatorController () {
                 if (this.getLastOperation().getOperatorType() != 'binary') {
                     return false;
                 }
-                operationList.push(new CopyOperationStage(operationList[operationList.length - 2], 'implicit'));
+                var runningList = this.cloneOperationList();
+                runningList = evaluateRunningList(runningList);
+                operationList.push(new CopyOperationStage(runningList[0], 'implicit'));
                 if (operationList[operationList.length - 2].getValue() != '=') {
                     setRepeatOperation(operationList[operationList.length - 1]);
                     return false;
@@ -248,17 +250,45 @@ function CalculatorController () {
                 return true;
             };
 
+            function evaluateRunningList (runningList) {
+                while (runningList.length > 3) {
+                    for (var i=0; i < runningList.length-1; i++) {
+                        if (runningList[i].getOperationType() == 'operator') {
+                            if (runningList[i].getOperatorType() == 'binary' && i < runningList.length - 2) {
+                                /*if (runningList[i].getOperatorPriority() >= runningList[i+2].getOperatorPriority()) { // enforce order of operations
+                                 var operation = runningList.slice(i - 1, i + 2);
+                                 var newOperation = evaluateBinaryOperation(operation);
+                                 runningList.splice(i - 1, 3, newOperation);
+                                 break;
+                                 }*/
+                                var operation = runningList.slice(i - 1, i + 2);
+                                var newOperation = evaluateBinaryOperation(operation);
+                                runningList.splice(i - 1, 3, newOperation);
+                                break;
+                            } else {
+
+                            }
+                        }
+                    }
+                }
+                return [runningList[runningList.length - 2]];
+            }
+
             this.evaluateOperationList = function() {
                 while (operationList.length > 3) {
                     for (var i=0; i < operationList.length; i++) {
                         if (operationList[i].getOperationType() == 'operator') {
                             if (operationList[i].getOperatorType() == 'binary') {
-                                if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce order of operations
+                                /*if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce order of operations
                                     var operation = operationList.slice(i - 1, i + 2);
                                     var newOperation = evaluateBinaryOperation(operation);
                                     operationList.splice(i - 1, 3, newOperation);
                                     break;
-                                }
+                                }*/
+                                var operation = operationList.slice(i - 1, i + 2);
+                                var newOperation = evaluateBinaryOperation(operation);
+                                operationList.splice(i - 1, 3, newOperation);
+                                break;
                             } else {
 
                             }
