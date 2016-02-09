@@ -253,10 +253,12 @@ function CalculatorController () {
                     for (var i=0; i < operationList.length; i++) {
                         if (operationList[i].getOperationType() == 'operator') {
                             if (operationList[i].getOperatorType() == 'binary') {
-                                var operation = operationList.slice(i-1,i+2);
-                                var newOperation = evaluateBinaryOperation(operation);
-                                operationList.splice(i-1, 3, newOperation);
-                                break;
+                                if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce order of operations
+                                    var operation = operationList.slice(i - 1, i + 2);
+                                    var newOperation = evaluateBinaryOperation(operation);
+                                    operationList.splice(i - 1, 3, newOperation);
+                                    break;
+                                }
                             } else {
 
                             }
