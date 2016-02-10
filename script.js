@@ -139,8 +139,18 @@ function CalculatorController () {
      * @constructor
      */
     function MemoryController () {
+
+        //  Begin initial private variable construction
         var operationHistory = new OperationHistory();
         var currentOperationList = new OperationList();
+        //  Close initial private variable construction
+
+        //  Begin applyInputObject method
+        /**
+         * Updates operation lists as necessary, then returns an array containing display information
+         * @param {Object} inputObject
+         * @returns {Array} nested arrays containing display information
+         */
         this.applyInputObject = function(inputObject) {
             switch (inputObject.getOperationType()) {
                 case 'special':
@@ -175,11 +185,19 @@ function CalculatorController () {
 
             return [currentOperationList.getDisplayObject(), operationHistory.getDisplayObject()];
         };
+        //  Close applyInputObject method
 
+        //  Begin cloneOperationList method
         function cloneOperationList (operationList) {
             return new OperationList(operationList.cloneOperationList(), operationList.getRepeatOperator(), operationList.getRepeatOperand());
         }
+        //  Close cloneOperationList method
 
+        //  Begin OperationHistory constructor
+        /**
+         * Constructs an object for storing previously evaluated OperationLists
+         * @constructor
+         */
         function OperationHistory () {
             var history = [];
 
@@ -195,8 +213,19 @@ function CalculatorController () {
                 return displayObject;
             };
         }
+        //  Close OperationHistory constructor
 
+        //  Begin OperationList constructor
+        /**
+         * Constructs a list for holding and modifying OperationStages. A single OperationStage represents a single expression.
+         * @param {Object} lastOperation
+         * @param {Object} repeatOperator
+         * @param {Object} repeatOperand
+         * @constructor
+         */
         function OperationList (lastOperation, repeatOperator, repeatOperand) {
+
+            //  Begin initial private variable assignment
             var operationList;
             if (lastOperation === undefined) {
                 operationList = [new ZeroOperationStage()];
@@ -211,7 +240,37 @@ function CalculatorController () {
             if (repeatOperand === undefined) {
                 repeatOperand = null;
             }
+            //  Close initial private variable assignment
 
+            //  Begin getDisplayObject method
+            this.getDisplayObject = function() {
+                if (operationList.length < 1) {
+                    return ['null',''];
+                } else {
+                    var operationListClone = operationList.slice();
+                    var lastOperation = (operationListClone.pop()).getValue();
+                    return [lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')];
+                }
+            };
+            //  Close getDisplayObject method
+
+            //  Begin clearEntry method
+            this.clearEntry = function() {
+                if (this.getLastOperation().getCreationType() == 'explicit' ||
+                    this.getLastOperation().getOperationType() != 'operand' ||
+                    this.getLastOperation().getValue() !== '0') {
+                    this.setLastOperation(new ZeroOperationStage());
+                    if (operationList.length > 1) {
+                        setRepeatOperation(this.getLastOperation());
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+            //  Close clearEntry method
+
+            //  Begin addOperation method
             this.addOperation = function(inputObject) {
                 var currentIndex = operationList.length - 1;
                 while (currentIndex > 0 && operationList[currentIndex].canPrecede(inputObject)) {
@@ -231,31 +290,9 @@ function CalculatorController () {
                 }
                 return true;
             };
+            //  Close addOperation method
 
-            this.getDisplayObject = function() {
-                if (operationList.length < 1) {
-                    return ['null',''];
-                } else {
-                    var operationListClone = operationList.slice();
-                    var lastOperation = (operationListClone.pop()).getValue();
-                    return [lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')];
-                }
-            };
-
-            this.clearEntry = function() {
-                if (this.getLastOperation().getCreationType() == 'explicit' ||
-                    this.getLastOperation().getOperationType() != 'operand' ||
-                    this.getLastOperation().getValue() !== '0') {
-                    this.setLastOperation(new ZeroOperationStage());
-                    if (operationList.length > 1) {
-                        setRepeatOperation(this.getLastOperation());
-                    }
-                    return true;
-                } else {
-                    return false;
-                }
-            };
-
+            //  Begin validation method
             this.validateOperationList = function() {
                 if (this.getLastOperation().getOperationType() != 'operator') {
                     return false;
@@ -277,7 +314,9 @@ function CalculatorController () {
                 }
                 return true;
             };
+            //  Close validation method
 
+            //  Begin evaluation methods
             function evaluateRunningList (runningList) {
                 while (runningList.length > 3) {
                     for (var i=0; i < runningList.length-1; i++) {
@@ -356,7 +395,9 @@ function CalculatorController () {
                         return new OperationStage(result, 'operand', 'implicit');
                 }
             }
+            //  Close evaluation methods
 
+            //  Begin cloneOperationList method
             this.cloneOperationList = function () {
                 var listClone = [];
                 for (var i = 0; i < operationList.length; i++) {
@@ -364,14 +405,15 @@ function CalculatorController () {
                 }
                 return listClone;
             };
+            //  Close cloneOperationList method
 
+            //  Begin get/set last operation methods
             this.getLastOperation = function(){
                 if (operationList.length < 1) {
                     return undefined;
                 }
                 return operationList[operationList.length - 1];
             };
-
             this.setLastOperation = function(newEntry) {
                 if (operationList.length >= 1) {
                     operationList[operationList.length - 1] = newEntry;
@@ -379,15 +421,15 @@ function CalculatorController () {
                     operationList.push(newEntry);
                 }
             };
+            //  Close get/set last operation methods
 
+            //  Begin repeat evaluation operator methods
             this.getRepeatOperator = function() {
                 return repeatOperator;
             };
-
             this.getRepeatOperand = function () {
                 return repeatOperand;
             };
-
             function setRepeatOperation(operation) {
                 if (operation === null) {
                     repeatOperand = null;
@@ -407,8 +449,9 @@ function CalculatorController () {
                     return null;
                 }
             }
-
+            //  Close repeat evaluation operator methods
         }
+        //  Close OperationList constructor
 
         //  Begin OperationStage constructor
         /**
