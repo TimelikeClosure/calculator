@@ -317,6 +317,12 @@ function CalculatorController () {
             //  Close validation method
 
             //  Begin evaluation methods
+            /**
+             * Evaluates the given runningList, excluding the last operation and any prevented by mathematical order of
+             * operations, and returns the last operand in an array.
+             * @param runningList
+             * @returns {Array}
+             */
             function evaluateRunningList (runningList) {
                 while (runningList.length > 3) {
                     for (var i=0; i < runningList.length-1; i++) {
@@ -343,6 +349,10 @@ function CalculatorController () {
                 return [runningList[runningList.length - 2]];
             }
 
+            /**
+             * Evaluates the entire operationList according to mathematical order of operations.
+             * @returns {null}
+             */
             this.evaluateOperationList = function() {
                 while (operationList.length > 3) {
                     for (var i=0; i < operationList.length; i++) {
@@ -368,6 +378,12 @@ function CalculatorController () {
                 return null;
             };
 
+            /**
+             * Takes an array containing a binary operation and returns the evaluated result.
+             * @param {Array} operatorList length of 3, structured as [OperandStage, OperatorStage, OperandStage],
+             * where OperatorStage is a binary operation
+             * @returns {OperationStage}
+             */
             function evaluateBinaryOperation(operatorList) {
                 operand1 = parseFloat(operatorList[0].getValue());
                 operand2 = parseFloat(operatorList[2].getValue());
