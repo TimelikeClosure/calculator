@@ -23,122 +23,29 @@ var calculator = new CalculatorController();
 function CalculatorController () {
 
     //  Begin calculator component controller instantiation
-    var buttons = new ButtonsController();
-    var memory = new MemoryController();
-    var display = new DisplayController();
+    var model = new CalculatorModel();
+    var view = new CalculatorView();
     //  End calculator component controller instantiation
 
     //  Begin addButtonPress controller method
     /**
-     * Updates memory and display from button presses
-     * @param buttonDOMObject
+     * Updates model and view from button presses
+     * @param $buttonDOMObject
      */
     this.addButtonPress = function($buttonDOMObject) {
-        display.emptyDisplay();
-        var buttonPress = buttons.getButtonPressObject($buttonDOMObject);
-        var memoryDisplayObject = memory.applyInputObject(buttonPress);
-        display.updateDisplay(memoryDisplayObject);
+        view.emptyDisplay();
+        var buttonPress = view.getButtonPressObject($buttonDOMObject);
+        var memoryDisplayObject = model.applyInputObject(buttonPress);
+        view.updateDisplay(memoryDisplayObject);
     };
     //  Close addButtonPress controller method
 
-    //  Begin ButtonsController constructor
+    //  Begin CalculatorModel constructor
     /**
-     * Constructs controller for DOM button inputs
+     * Constructs model for memory objects
      * @constructor
      */
-    function ButtonsController () {
-
-        //  Begin getButtonPressObject method
-        /**
-         * Given a jQuery selector, generates a ButtonPress object for use by the memory controller.
-         * @param {Object} $buttonDOMObject
-         * @returns {Object}
-         */
-        this.getButtonPressObject = function($buttonDOMObject) {
-            var buttonString = getButtonPressStringFromDOM($buttonDOMObject);
-            return getButtonPressObjectFromString(buttonString);
-        };
-        //  Close getButtonPressObject method
-
-        //  Begin getButtonPressObject subroutines
-        /**
-         * Given a jQuery selector from a button press, returns the string containing the represented operation.
-         * @param {Object} $buttonDOMObject
-         * @returns {string}
-         */
-        function getButtonPressStringFromDOM($buttonDOMObject){
-            return $buttonDOMObject.text();
-        }
-
-        /**
-         * Given an operation string, returns a ButtonPress object.
-         * @param {string} buttonString
-         * @returns {Object}
-         */
-        function getButtonPressObjectFromString(buttonString){
-            switch (buttonString) {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                case '.':
-                    return new OperandPress(buttonString);
-                case '+':
-                case '-':
-                case '×':
-                case '÷':
-                case '=':
-                    return new OperatorPress(buttonString);
-                case 'C':
-                case 'CE':
-                    return new SpecialPress(buttonString);
-                default:
-                    return undefined;
-            }
-        }
-        //  Close getButtonPressObject subroutines
-
-        //  Begin ButtonPress object constructors
-        /**
-         * Constructs a ButtonPress object for use by the memoryController.
-         * @param {string} buttonString
-         * @param {string} operationType
-         * @constructor
-         */
-        function ButtonPress(buttonString, operationType){
-            this.getString = function() {
-                return buttonString;
-            };
-            this.getOperationType = function() {
-                return operationType;
-            };
-        }
-        function OperandPress(buttonString){ // Creates ButtonPress object of operationType "operand"
-            ButtonPress.call(this, buttonString, 'operand');
-        }
-        function OperatorPress(buttonString){ // Creates ButtonPress object of operationType "operator"
-            ButtonPress.call(this, buttonString, 'operator');
-        }
-        function SpecialPress(buttonString){ // Creates ButtonPress object of operationType "special"
-            ButtonPress.call(this, buttonString, 'special');
-        }
-        //  Close ButtonPress object constructors
-
-    }
-    //  Close ButtonsController constructor
-
-    //  Begin MemoryController constructor
-    /**
-     * Constructs controller for memory objects
-     * @constructor
-     */
-    function MemoryController () {
+    function CalculatorModel () {
 
         //  Begin initial private variable construction
         var operationHistory = new OperationHistory();
@@ -683,14 +590,14 @@ function CalculatorController () {
         }
         //  Close clearCurrentOperationList method
     }
-    //  Close MemoryController constructor
+    //  Close CalculatorModel constructor
 
-    //  Begin DisplayController constructor
+    //  Begin CalculatorView constructor
     /**
-     * Constructs controller for DOM display objects.
+     * Constructs view for handling DOM inputs and outputs.
      * @constructor
      */
-    function DisplayController () {
+    function CalculatorView () {
 
         //  Begin emptyDisplay method
         /**
@@ -735,8 +642,91 @@ function CalculatorController () {
         };
         //  Close updateDisplay method
 
+        //  Begin getButtonPressObject method
+        /**
+         * Given a jQuery selector, generates a ButtonPress object for use by the model.
+         * @param {Object} $buttonDOMObject
+         * @returns {Object}
+         */
+        this.getButtonPressObject = function($buttonDOMObject) {
+            var buttonString = getButtonPressStringFromDOM($buttonDOMObject);
+            return getButtonPressObjectFromString(buttonString);
+        };
+        //  Close getButtonPressObject method
+
+        //  Begin getButtonPressObject subroutines
+        /**
+         * Given a jQuery selector from a button press, returns the string containing the represented operation.
+         * @param {Object} $buttonDOMObject
+         * @returns {string}
+         */
+        function getButtonPressStringFromDOM($buttonDOMObject){
+            return $buttonDOMObject.text();
+        }
+
+        /**
+         * Given an operation string, returns a ButtonPress object.
+         * @param {string} buttonString
+         * @returns {Object}
+         */
+        function getButtonPressObjectFromString(buttonString){
+            switch (buttonString) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '.':
+                    return new OperandPress(buttonString);
+                case '+':
+                case '-':
+                case '×':
+                case '÷':
+                case '=':
+                    return new OperatorPress(buttonString);
+                case 'C':
+                case 'CE':
+                    return new SpecialPress(buttonString);
+                default:
+                    return undefined;
+            }
+        }
+        //  Close getButtonPressObject subroutines
+
+        //  Begin ButtonPress object constructors
+        /**
+         * Constructs a ButtonPress object for use by the model.
+         * @param {string} buttonString
+         * @param {string} operationType
+         * @constructor
+         */
+        function ButtonPress(buttonString, operationType){
+            this.getString = function() {
+                return buttonString;
+            };
+            this.getOperationType = function() {
+                return operationType;
+            };
+        }
+        function OperandPress(buttonString){ // Creates ButtonPress object of operationType "operand"
+            ButtonPress.call(this, buttonString, 'operand');
+        }
+        function OperatorPress(buttonString){ // Creates ButtonPress object of operationType "operator"
+            ButtonPress.call(this, buttonString, 'operator');
+        }
+        function SpecialPress(buttonString){ // Creates ButtonPress object of operationType "special"
+            ButtonPress.call(this, buttonString, 'special');
+        }
+        //  Close ButtonPress object constructors
+
+
     }
-    //  Close DisplayController constructor
+    //  Close CalculatorView constructor
 
 }
 //  Close CalculatorController constructor
