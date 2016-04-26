@@ -68,6 +68,9 @@ function CalculatorController () {
                         case 'C':
                             clearCurrentOperationList();
                             break;
+                        case '←':
+                            clearLastChar();
+                            break;
                         default:
                             break;
                     }
@@ -160,6 +163,23 @@ function CalculatorController () {
                 }
             };
             //  Close getDisplayObject method
+
+            //  Begin clearLastChar method
+            this.clearLastChar = function() {
+                var lastOperationTruncate = this.getLastOperation().canTruncate();
+                if (lastOperationTruncate) {
+                    if (lastOperationTruncate > 1) {
+                        return this.getLastOperation().truncate();
+                    } else {
+                        this.setLastOperation(new ZeroOperationStage());
+                        if (operationList.length > 1) {
+                            setRepeatOperation(this.getLastOperation());
+                        }
+                    }
+                }
+                return false;
+            };
+            //  End clearLastChar method
 
             //  Begin clearEntry method
             this.clearEntry = function() {
@@ -429,7 +449,7 @@ function CalculatorController () {
             }
             //  Close initial private variable assignment
 
-            //  Begin appendInputObject method
+            //  Begin value modification methods
             /**
              * Append the given inputObject to the OperationStage
              * @param {Object} inputObject
@@ -439,9 +459,24 @@ function CalculatorController () {
                 value += inputObject.getString();
                 return null;
             };
-            //  Close appendInputObject method
+
+            this.truncate = function() {
+                value = value.substr(0, value.length - 1);
+            };
+            //  End value modification methods
 
             //  Begin inputObject test methods
+            /**
+             * Tests whether the OperationStage's value can be truncated.
+             * @returns {number|false} OperationStage's value's length if can be truncated, false otherwise.
+             */
+            this.canTruncate = function() {
+                if (operationType == 'operand' && creationType == 'explicit') {
+                    return this.getValue().length;
+                }
+                return false;
+            };
+
             /**
              * Tests whether the inputObject can affect the OperationStage prior to the current one in an OperationList.
              * @param {Object} inputObject
@@ -569,6 +604,15 @@ function CalculatorController () {
         }
         //  Close OperationStage sub-class constructors
 
+        //  Begin clearLastChar method
+        /**
+         * Removes the last character from the most recent operand, if it is explicit.
+         */
+        function clearLastChar() {
+            currentOperationList.clearLastChar();
+        }
+        //  End clearLastChar method
+
         //  Begin clearCurrentEntry method
         /**
          * Clears the most recent operand. If the most recent operand is an implicit "0", calls clearCurrentOperationList().
@@ -691,6 +735,7 @@ function CalculatorController () {
                     return new OperatorPress(buttonString);
                 case 'C':
                 case 'CE':
+                case '←':
                     return new SpecialPress(buttonString);
                 default:
                     return undefined;
