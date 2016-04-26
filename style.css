@@ -7,12 +7,23 @@
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
     background-color: lightgrey;
 }
+@media (max-width: 991px) {
+    .calc-body {
+        flex-direction: column;
+    }
+}
 /*Close styling calculator body*/
 
 /*Begin styling calculator main*/
 .calc-main {
     width: 596px;
     padding: 20px 40px;
+}
+@media (max-width: 991px) {
+    .calc-main {
+        width: auto;
+        /*max-width: 596px;*/
+    }
 }
 /*Close styling calculator main*/
 
@@ -41,6 +52,23 @@
     height: 57px;
     overflow: hidden;
 }
+@media (max-width: 767px) {
+    .outputs.jumbotron {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    .display-lg {
+        font-size: 28px;
+        height: 47px;
+    }
+}
+@media (max-width: 486px) {
+    .display-lg {
+        font-size: 22px;
+        height: 35px;
+    }
+}
+
 /*Close styling calculator display*/
 
 /*Begin styling calculator buttons*/
@@ -64,20 +92,15 @@
     min-width: 400px;
     padding: 20px 40px;
 }
-
 .calc-history .jumbotron {
     flex-grow: 1;
     max-height: 832px;
     overflow: auto;
 }
-
-@media screen and (max-width: 991px) {
-    .calc-main {
-        width: auto;
-        max-width: 596px;
-    }
+@media (max-width: 991px) {
     .calc-history {
-        display: none;
+        min-width: 0;
     }
 }
+
 /*Close styling calculator history*/
