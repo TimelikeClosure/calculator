@@ -1,7 +1,7 @@
 
 //  Begin OperationList constructor
 /**
- * Constructs a list for holding and modifying OperationStages. A single OperationStage represents a single expression.
+ * Constructs a list for holding and modifying Operations. A single Operation represents a single expression.
  * @param {Object} lastOperation
  * @param {Object} repeatOperator
  * @param {Object} repeatOperand
@@ -12,7 +12,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     //  Begin initial private variable assignment
     var operationList;
     if (lastOperation === undefined) {
-        operationList = [new ZeroOperationStage()];
+        operationList = [new ZeroOperation()];
     } else if (!(Array.isArray(lastOperation))) {
         operationList = [new CopyOperationStage(lastOperation), 'implicit'];
     } else {
@@ -45,7 +45,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             if (lastOperationTruncate > 1) {
                 return this.getLastOperation().truncate();
             } else {
-                this.setLastOperation(new ZeroOperationStage());
+                this.setLastOperation(new ZeroOperation());
                 if (operationList.length > 1) {
                     setRepeatOperation(this.getLastOperation());
                 }
@@ -60,7 +60,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
         if (!this.getLastOperation().implicit() ||
             this.getLastOperation().type() != 'operand' ||
             this.getLastOperation().value() !== '0') {
-            this.setLastOperation(new ZeroOperationStage());
+            this.setLastOperation(new ZeroOperation());
             if (operationList.length > 1) {
                 setRepeatOperation(this.getLastOperation());
             }
@@ -80,13 +80,13 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
         if (currentIndex < 0) {
             return false;
         } else if (operationList[currentIndex].canReplace(inputObject)) {
-            operationList[currentIndex] = new InputObjectOperationStage(inputObject);
+            operationList[currentIndex] = new InputObjectOperation(inputObject);
             setRepeatOperation(operationList[currentIndex]);
         } else if (operationList[currentIndex].canAppend(inputObject)) {
             operationList[currentIndex].appendInputObject(inputObject);
             setRepeatOperation(operationList[currentIndex]);
         } else if (operationList[currentIndex].canFollow(inputObject)) {
-            operationList.push(new InputObjectOperationStage(inputObject));
+            operationList.push(new InputObjectOperation(inputObject));
             setRepeatOperation(operationList[currentIndex + 1]);
         }
         return true;
@@ -103,7 +103,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
         }
         var runningList = this.cloneOperationList();
         runningList = evaluateRunningList(runningList);
-        operationList.push(new CopyOperationStage(runningList[0], true));
+        operationList.push(new CopyOperation(runningList[0], true));
         if (operationList[operationList.length - 2].value() != '=') {
             setRepeatOperation(operationList[operationList.length - 1]);
             return false;
@@ -183,7 +183,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
      * Takes an array containing a binary operation and returns the evaluated result.
      * @param {Array} operatorList length of 3, structured as [OperandStage, OperatorStage, OperandStage],
      * where OperatorStage is a binary operation
-     * @returns {OperationStage}
+     * @returns {Operation}
      */
     function evaluateBinaryOperation(operatorList) {
         operand1 = parseFloat(operatorList[0].value());
@@ -194,22 +194,22 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
                 result = parseFloat(
                     (operand1 + operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', true);
+                return new Operation(result, 'operand', true);
             case '-':
                 result = parseFloat(
                     (operand1 - operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', true);
+                return new Operation(result, 'operand', true);
             case '×':
                 result = parseFloat(
                     (operand1 * operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', true);
+                return new Operation(result, 'operand', true);
             case '÷':
                 result = parseFloat(
                     (operand1 / operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', true);
+                return new Operation(result, 'operand', true);
         }
     }
     //  Close evaluation methods
@@ -218,7 +218,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     this.cloneOperationList = function () {
         var listClone = [];
         for (var i = 0; i < operationList.length; i++) {
-            listClone.push(new CopyOperationStage(operationList[i]));
+            listClone.push(new CopyOperation(operationList[i]));
         }
         return listClone;
     };

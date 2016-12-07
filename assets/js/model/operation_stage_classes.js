@@ -1,24 +1,24 @@
 
-//  Begin OperationStage constructor
+//  Begin Operation constructor
 /**
- * Constructor for OperationStage objects. These contain a single operand or operator, type information, and
+ * Constructor for Operation objects. These contain a single operand or operator, type information, and
  * circumstances of creation.
  * @param {string} value
- * @param {string} type
+ * @param {string} type - operation type: "
  * @param {boolean} implicit
  * @constructor
  */
-function OperationStage (value, type, implicit) {
+function Operation (value, type, implicit) {
 
     //  Begin initial private variable assignment
     this._value = value;
     this._type = type;
     if (typeof implicit !== "boolean" && typeof implicit !== "undefined") {
-        throw "invalid OperationStage argument provided for implicit: " + implicit;
+        throw "invalid Operation argument provided for implicit: " + implicit;
     }
     this._implicit = (implicit === true);
     if (this._type == 'operand') {
-        if (this._value == '.') { // New OperationStages initiated with a decimal point are led with a zero.
+        if (this._value == '.') { // New Operations initiated with a decimal point are led with a zero.
             this._value = '0.';
         }
     } else if (this._type == 'operator') {
@@ -56,7 +56,7 @@ function OperationStage (value, type, implicit) {
 
     //  Begin value modification methods
     /**
-     * Append the given inputObject to the OperationStage
+     * Append the given inputObject to the Operation
      * @param {Object} inputObject
      * @returns {null}
      */
@@ -72,8 +72,8 @@ function OperationStage (value, type, implicit) {
 
     //  Begin inputObject test methods
     /**
-     * Tests whether the OperationStage's value can be truncated.
-     * @returns {number|false} OperationStage's value's length if can be truncated, false otherwise.
+     * Tests whether the Operation's value can be truncated.
+     * @returns {number|false} Operation's value's length if can be truncated, false otherwise.
      */
     this.canTruncate = function() {
         if (this._type == 'operand' && !this._implicit) {
@@ -83,7 +83,7 @@ function OperationStage (value, type, implicit) {
     };
 
     /**
-     * Tests whether the inputObject can affect the OperationStage prior to the current one in an OperationList.
+     * Tests whether the inputObject can affect the Operation prior to the current one in an OperationList.
      * @param {Object} inputObject
      * @returns {boolean}
      */
@@ -100,7 +100,7 @@ function OperationStage (value, type, implicit) {
         return true;
     };
     /**
-     * Tests whether the inputObject can replace the current OperationStage.
+     * Tests whether the inputObject can replace the current Operation.
      * @param {Object} inputObject
      * @returns {boolean}
      */
@@ -127,7 +127,7 @@ function OperationStage (value, type, implicit) {
         }
     };
     /**
-     * Tests whether the inputObject can append to the current OperationStage.
+     * Tests whether the inputObject can append to the current Operation.
      * @param {Object} inputObject
      * @returns {boolean}
      */
@@ -144,7 +144,7 @@ function OperationStage (value, type, implicit) {
         return true;
     };
     /**
-     * Tests whether the inputObject can be added after the current OperationStage in an OperationList.
+     * Tests whether the inputObject can be added after the current Operation in an OperationList.
      * @param {Object} inputObject
      * @returns {boolean}
      */
@@ -170,47 +170,44 @@ function OperationStage (value, type, implicit) {
     this.priority = function() {
         return this._priority;
     };
-    this.getCreationType = function() {
-        return implicit;
-    };
     this.implicit = function () {
         return this._implicit;
     }
     //  Close Get methods
 
 }
-//  Close OperationStage constructor
+//  Close Operation constructor
 
-//  Begin OperationStage sub-class constructors
+//  Begin Operation sub-class constructors
 /**
- * Generates an OperationStage object with an implicit zero.
+ * Generates an Operation object with an implicit zero.
  * @constructor
  */
-function ZeroOperationStage () {
-    OperationStage.call(this, '0', 'operand', true);
+function ZeroOperation () {
+    Operation.call(this, '0', 'operand', true);
 }
-ZeroOperationStage.prototype.__proto__ = OperationStage.prototype;
+ZeroOperation.prototype.__proto__ = Operation.prototype;
 
 /**
- * Generates an explicit OperationStage object from a InputObject object
+ * Generates an explicit Operation object from a InputObject object
  * @param {Object}  inputObject
  * @constructor
  */
-function InputObjectOperationStage(inputObject) {
-    OperationStage.call(this, inputObject.getString(), inputObject.getOperationType());
+function InputObjectOperation(inputObject) {
+    Operation.call(this, inputObject.getString(), inputObject.getOperationType());
 }
-InputObjectOperationStage.prototype.__proto__ = OperationStage.prototype;
+InputObjectOperation.prototype.__proto__ = Operation.prototype;
 
 /**
- * Generates an OperationStage object, copying from another OperationStage object. If no creationType is specified,
+ * Generates an Operation object, copying from another Operation object. If no creationType is specified,
  * takes on the same value as the reference object.
- * @param {Object} referenceOperationStage
+ * @param {Object} referenceOperation
  * @param {string|undefined} creationType
  * @constructor
  */
-function CopyOperationStage(referenceOperationStage, implicit) {
-    if (implicit === undefined) {implicit = referenceOperationStage.implicit();}
-    OperationStage.call(this, referenceOperationStage.value(), referenceOperationStage.type(), implicit);
+function CopyOperation(referenceOperation, implicit) {
+    if (implicit === undefined) {implicit = referenceOperation.implicit();}
+    Operation.call(this, referenceOperation.value(), referenceOperation.type(), implicit);
 }
-CopyOperationStage.prototype.__proto__ = OperationStage.prototype;
-//  Close OperationStage sub-class constructors
+CopyOperation.prototype.__proto__ = Operation.prototype;
+//  Close Operation sub-class constructors
