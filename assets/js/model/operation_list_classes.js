@@ -32,8 +32,8 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             return ['null',''];
         } else {
             var operationListClone = operationList.slice();
-            var lastOperation = (operationListClone.pop()).getValue();
-            return [lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')];
+            var lastOperation = (operationListClone.pop()).value();
+            return [lastOperation, operationListClone.map(function(object){return object.value();}).join(' ')];
         }
     };
     //  Close getDisplayObject method
@@ -57,9 +57,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin clearEntry method
     this.clearEntry = function() {
-        if (this.getLastOperation().getCreationType() == 'explicit' ||
-            this.getLastOperation().getOperationType() != 'operand' ||
-            this.getLastOperation().getValue() !== '0') {
+        if (!this.getLastOperation().implicit() ||
+            this.getLastOperation().type() != 'operand' ||
+            this.getLastOperation().value() !== '0') {
             this.setLastOperation(new ZeroOperationStage());
             if (operationList.length > 1) {
                 setRepeatOperation(this.getLastOperation());
@@ -95,7 +95,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin validation method
     this.validateOperationList = function() {
-        if (this.getLastOperation().getOperationType() != 'operator') {
+        if (this.getLastOperation().type() != 'operator') {
             return false;
         }
         if (this.getLastOperation().getOperatorType() != 'binary') {
@@ -103,8 +103,8 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
         }
         var runningList = this.cloneOperationList();
         runningList = evaluateRunningList(runningList);
-        operationList.push(new CopyOperationStage(runningList[0], 'implicit'));
-        if (operationList[operationList.length - 2].getValue() != '=') {
+        operationList.push(new CopyOperationStage(runningList[0], true));
+        if (operationList[operationList.length - 2].value() != '=') {
             setRepeatOperation(operationList[operationList.length - 1]);
             return false;
         }
@@ -127,9 +127,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     function evaluateRunningList (runningList) {
         while (runningList.length > 3) {
             for (var i=0; i < runningList.length-1; i++) {
-                if (runningList[i].getOperationType() == 'operator') {
+                if (runningList[i].type() == 'operator') {
                     if (runningList[i].getOperatorType() == 'binary' && i < runningList.length - 2) {
-                        if (runningList[i].getOperatorPriority() >= runningList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
+                        if (runningList[i].priority() >= runningList[i+2].priority()) { // enforce mathematical order of operations
                             var operation = runningList.slice(i - 1, i + 2);
                             var newOperation = evaluateBinaryOperation(operation);
                             runningList.splice(i - 1, 3, newOperation);
@@ -157,9 +157,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     this.evaluateOperationList = function() {
         while (operationList.length > 3) {
             for (var i=0; i < operationList.length; i++) {
-                if (operationList[i].getOperationType() == 'operator') {
+                if (operationList[i].type() == 'operator') {
                     if (operationList[i].getOperatorType() == 'binary') {
-                        if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
+                        if (i > operationList.length - 3 || operationList[i].priority() >= operationList[i+2].priority()) { // enforce mathematical order of operations
                             var operation = operationList.slice(i - 1, i + 2);
                             var newOperation = evaluateBinaryOperation(operation);
                             operationList.splice(i - 1, 3, newOperation);
@@ -186,30 +186,30 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
      * @returns {OperationStage}
      */
     function evaluateBinaryOperation(operatorList) {
-        operand1 = parseFloat(operatorList[0].getValue());
-        operand2 = parseFloat(operatorList[2].getValue());
+        operand1 = parseFloat(operatorList[0].value());
+        operand2 = parseFloat(operatorList[2].value());
         var result;
-        switch (operatorList[1].getValue()) {
+        switch (operatorList[1].value()) {
             case '+':
                 result = parseFloat(
                     (operand1 + operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new OperationStage(result, 'operand', true);
             case '-':
                 result = parseFloat(
                     (operand1 - operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new OperationStage(result, 'operand', true);
             case '×':
                 result = parseFloat(
                     (operand1 * operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new OperationStage(result, 'operand', true);
             case '÷':
                 result = parseFloat(
                     (operand1 / operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new OperationStage(result, 'operand', true);
         }
     }
     //  Close evaluation methods
@@ -252,14 +252,14 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             repeatOperand = null;
             repeatOperator = null;
             return null;
-        } else if (operation.getOperationType() == 'operand') {
+        } else if (operation.type() == 'operand') {
             repeatOperand = operation;
             return null;
         } else if (operation.getOperatorType() == 'unary') {
             repeatOperand = null;
             repeatOperator = null;
             return null;
-        } else if (operation.getValue() != '='){
+        } else if (operation.value() != '='){
             repeatOperator = operation;
             return null;
         } else {

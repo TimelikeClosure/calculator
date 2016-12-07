@@ -4,49 +4,51 @@
  * Constructor for OperationStage objects. These contain a single operand or operator, type information, and
  * circumstances of creation.
  * @param {string} value
- * @param {string} operationType
- * @param {string} creationType
+ * @param {string} type
+ * @param {boolean} implicit
  * @constructor
  */
-function OperationStage (value, operationType, creationType) {
+function OperationStage (value, type, implicit) {
 
     //  Begin initial private variable assignment
-    var operatorType; // "unary", "binary", or "parenthesis"
-    var operatorPriority; // Used for order of operations. Higher number takes higher priority. "=" set at 0.
-    if (operationType == 'operand') {
-        if (value == '.') { // New OperationStages initiated with a decimal point are led with a zero.
-            value = '0.';
+    this._value = value;
+    this._type = type;
+    if (typeof implicit !== "boolean" && typeof implicit !== "undefined") {
+        throw "invalid OperationStage argument provided for implicit: " + implicit;
+    }
+    this._implicit = (implicit === true);
+    if (this._type == 'operand') {
+        if (this._value == '.') { // New OperationStages initiated with a decimal point are led with a zero.
+            this._value = '0.';
         }
-        operatorType = null;
-        operatorPriority = null;
-    } else if (operationType == 'operator') {
-        switch (value) {
+    } else if (this._type == 'operator') {
+        switch (this._value) {
             case '!':
-                operatorType = 'unary';
+                this._operatorType = 'unary';
                 break;
             case '=':
             case '+':
             case '-':
             case '×':
             case '÷':
-                operatorType = 'binary';
+                this._operatorType = 'binary';
                 break;
         }
-        switch (value) {
+        switch (this._value) {
             case '(':
             case ')':
-                operatorPriority = 4;
+                this._priority = 4;
                 break;
             case '×':
             case '÷':
-                operatorPriority = 2;
+                this._priority = 2;
                 break;
             case '+':
             case '-':
-                operatorPriority = 1;
+                this._priority = 1;
                 break;
             case '=':
-                operatorPriority = 0;
+                this._priority = 0;
                 break;
         }
     }
@@ -59,12 +61,12 @@ function OperationStage (value, operationType, creationType) {
      * @returns {null}
      */
     this.appendInputObject = function(inputObject) {
-        value += inputObject.getString();
+        this._value += inputObject.getString();
         return null;
     };
 
     this.truncate = function() {
-        value = value.substr(0, value.length - 1);
+        this._value = this._value.substr(0, this._value.length - 1);
     };
     //  End value modification methods
 
@@ -74,8 +76,8 @@ function OperationStage (value, operationType, creationType) {
      * @returns {number|false} OperationStage's value's length if can be truncated, false otherwise.
      */
     this.canTruncate = function() {
-        if (operationType == 'operand' && creationType == 'explicit') {
-            return this.getValue().length;
+        if (this._type == 'operand' && !this._implicit) {
+            return this.value().length;
         }
         return false;
     };
@@ -88,9 +90,9 @@ function OperationStage (value, operationType, creationType) {
     this.canPrecede = function(inputObject) {
         if (inputObject.getOperationType() != 'operator') {
             return false;
-        } else if (this.getOperationType() != 'operand') {
+        } else if (this.type() != 'operand') {
             return false;
-        } else if (this.getCreationType() != 'implicit') {
+        } else if (!this.implicit()) {
             return false;
         } else if (inputObject.getString() == '=') {
             return false;
@@ -103,25 +105,23 @@ function OperationStage (value, operationType, creationType) {
      * @returns {boolean}
      */
     this.canReplace = function(inputObject) {
-        if (this.getOperationType() != inputObject.getOperationType()) {
+        if (this.type() != inputObject.getOperationType()) {
             return false;
         }
-        switch (this.getOperationType()) {
+        switch (this.type()) {
             case 'operand':
-                if (this.getCreationType() != 'implicit') {
-                    if (this.getValue() == '0' && inputObject.getString() != '.') {
+                if (!this.implicit()) {
+                    if (this.value() == '0' && inputObject.getString() != '.') {
                         return true;
                     }
                     return false;
                 }
                 return true;
-                break;
             case 'operator':
                 if (inputObject.getString() != '=') {
                     return true;
                 }
                 return false;
-                break;
             default:
                 return false;
         }
@@ -132,13 +132,13 @@ function OperationStage (value, operationType, creationType) {
      * @returns {boolean}
      */
     this.canAppend = function(inputObject) {
-        if (this.getOperationType() != 'operand' || inputObject.getOperationType() != 'operand') {
+        if (this.type() != 'operand' || inputObject.getOperationType() != 'operand') {
             return false;
         }
-        if ((inputObject.getString() == '.') && (this.getValue().indexOf('.') >= 0)) {
+        if ((inputObject.getString() == '.') && (this.value().indexOf('.') >= 0)) {
             return false;
         }
-        if (this.getValue().length - (this.getValue().indexOf('.') > 0) >= 10) {
+        if (this.value().length - (this.value().indexOf('.') > 0) >= 10) {
             return false;
         }
         return true;
@@ -150,7 +150,7 @@ function OperationStage (value, operationType, creationType) {
      */
     this.canFollow = function(inputObject) {
         var isInputObjectOperand = (inputObject.getOperationType()=='operand');
-        var isLastOperatorBinaryOperator = ((this.getOperationType()=='operator') && (this.getOperatorType()=='binary'));
+        var isLastOperatorBinaryOperator = ((this.type()=='operator') && (this.type()=='binary'));
         return (isInputObjectOperand == isLastOperatorBinaryOperator);
         //  Only operands can follow binary operators.
         //  Only operators can follow operands and unary operators.
@@ -158,21 +158,24 @@ function OperationStage (value, operationType, creationType) {
     //  Close inputObject test methods
 
     //  Begin Get methods
-    this.getValue = function() {
-        return value;
+    this.value = function() {
+        return this._value;
     };
-    this.getOperationType = function() {
-        return operationType;
+    this.type = function() {
+        return this._type;
     };
     this.getOperatorType = function() {
-        return operatorType;
+        return this._operatorType;
     };
-    this.getOperatorPriority = function() {
-        return operatorPriority;
+    this.priority = function() {
+        return this._priority;
     };
     this.getCreationType = function() {
-        return creationType;
+        return implicit;
     };
+    this.implicit = function () {
+        return this._implicit;
+    }
     //  Close Get methods
 
 }
@@ -184,16 +187,20 @@ function OperationStage (value, operationType, creationType) {
  * @constructor
  */
 function ZeroOperationStage () {
-    OperationStage.call(this, '0', 'operand', 'implicit');
+    OperationStage.call(this, '0', 'operand', true);
 }
+ZeroOperationStage.prototype.__proto__ = OperationStage.prototype;
+
 /**
  * Generates an explicit OperationStage object from a InputObject object
  * @param {Object}  inputObject
  * @constructor
  */
 function InputObjectOperationStage(inputObject) {
-    OperationStage.call(this, inputObject.getString(), inputObject.getOperationType(), 'explicit');
+    OperationStage.call(this, inputObject.getString(), inputObject.getOperationType());
 }
+InputObjectOperationStage.prototype.__proto__ = OperationStage.prototype;
+
 /**
  * Generates an OperationStage object, copying from another OperationStage object. If no creationType is specified,
  * takes on the same value as the reference object.
@@ -201,8 +208,9 @@ function InputObjectOperationStage(inputObject) {
  * @param {string|undefined} creationType
  * @constructor
  */
-function CopyOperationStage(referenceOperationStage, creationType) {
-    if (creationType === undefined) {creationType = referenceOperationStage.getCreationType();}
-    OperationStage.call(this, referenceOperationStage.getValue(), referenceOperationStage.getOperationType(), creationType);
+function CopyOperationStage(referenceOperationStage, implicit) {
+    if (implicit === undefined) {implicit = referenceOperationStage.implicit();}
+    OperationStage.call(this, referenceOperationStage.value(), referenceOperationStage.type(), implicit);
 }
+CopyOperationStage.prototype.__proto__ = OperationStage.prototype;
 //  Close OperationStage sub-class constructors
