@@ -14,7 +14,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     if (lastOperation === undefined) {
         operationList = [new ZeroOperation()];
     } else if (!(Array.isArray(lastOperation))) {
-        operationList = [new CopyOperationStage(lastOperation), 'implicit'];
+        operationList = [new CopyOperation(lastOperation, true)];
     } else {
         operationList = lastOperation;
     }
