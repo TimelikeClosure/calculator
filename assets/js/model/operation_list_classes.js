@@ -2,21 +2,20 @@
 //  Begin OperationList constructor
 /**
  * Constructs a list for holding and modifying Operations. A single Operation represents a single expression.
- * @param {Object} lastOperation
+ * @param {Object} [operations] - existing operation(s) used to populate OperationList
  * @param {Object} repeatOperator
  * @param {Object} repeatOperand
  * @constructor
  */
-function OperationList (lastOperation, repeatOperator, repeatOperand) {
+function OperationList (operations, repeatOperator, repeatOperand) {
 
     //  Begin initial private variable assignment
-    var operationList;
-    if (lastOperation === undefined) {
-        operationList = [new ZeroOperation()];
-    } else if (!(Array.isArray(lastOperation))) {
-        operationList = [new CopyOperation(lastOperation, true)];
+    if (operations === undefined) {
+        this._list = [new ZeroOperation()];
+    } else if (!(Array.isArray(operations))) {
+        this._list = [new CopyOperation(operations, true)];
     } else {
-        operationList = lastOperation;
+        this._list = operations;
     }
     if (repeatOperator === undefined) {
         repeatOperator = null;
@@ -28,10 +27,10 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin getDisplayObject method
     this.getDisplayObject = function() {
-        if (operationList.length < 1) {
+        if (this._list.length < 1) {
             return ['null',''];
         } else {
-            var operationListClone = operationList.slice();
+            var operationListClone = this._list.slice();
             var lastOperation = (operationListClone.pop()).value;
             return [lastOperation, operationListClone.map(function(object){return object.value;}).join(' ')];
         }
@@ -46,7 +45,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
                 return this.getLastOperation().truncate();
             } else {
                 this.setLastOperation(new ZeroOperation());
-                if (operationList.length > 1) {
+                if (this._list.length > 1) {
                     setRepeatOperation(this.getLastOperation());
                 }
             }
@@ -61,7 +60,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             this.getLastOperation().type != 'operand' ||
             this.getLastOperation().value !== '0') {
             this.setLastOperation(new ZeroOperation());
-            if (operationList.length > 1) {
+            if (this._list.length > 1) {
                 setRepeatOperation(this.getLastOperation());
             }
             return true;
@@ -73,21 +72,21 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin addOperation method
     this.addOperation = function(inputObject) {
-        var currentIndex = operationList.length - 1;
-        while (currentIndex > 0 && operationList[currentIndex].canPrecede(inputObject)) {
+        var currentIndex = this._list.length - 1;
+        while (currentIndex > 0 && this._list[currentIndex].canPrecede(inputObject)) {
             currentIndex--;
         }
         if (currentIndex < 0) {
             return false;
-        } else if (operationList[currentIndex].canReplace(inputObject)) {
-            operationList[currentIndex] = new InputObjectOperation(inputObject);
-            setRepeatOperation(operationList[currentIndex]);
-        } else if (operationList[currentIndex].canAppend(inputObject)) {
-            operationList[currentIndex].appendInputObject(inputObject);
-            setRepeatOperation(operationList[currentIndex]);
-        } else if (operationList[currentIndex].canFollow(inputObject)) {
-            operationList.push(new InputObjectOperation(inputObject));
-            setRepeatOperation(operationList[currentIndex + 1]);
+        } else if (this._list[currentIndex].canReplace(inputObject)) {
+            this._list[currentIndex] = new InputObjectOperation(inputObject);
+            setRepeatOperation(this._list[currentIndex]);
+        } else if (this._list[currentIndex].canAppend(inputObject)) {
+            this._list[currentIndex].appendInputObject(inputObject);
+            setRepeatOperation(this._list[currentIndex]);
+        } else if (this._list[currentIndex].canFollow(inputObject)) {
+            this._list.push(new InputObjectOperation(inputObject));
+            setRepeatOperation(this._list[currentIndex + 1]);
         }
         return true;
     };
@@ -103,14 +102,14 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
         }
         var runningList = this.cloneOperationList();
         runningList = evaluateRunningList(runningList);
-        operationList.push(new CopyOperation(runningList[0], true));
-        if (operationList[operationList.length - 2].value != '=') {
-            setRepeatOperation(operationList[operationList.length - 1]);
+        this._list.push(new CopyOperation(runningList[0], true));
+        if (this._list[this._list.length - 2].value != '=') {
+            setRepeatOperation(this._list[this._list.length - 1]);
             return false;
         }
-        if (operationList.length == 3) {
+        if (this._list.length == 3) {
             if (repeatOperand !== null && repeatOperator !== null) {
-                operationList.splice(1, 0, repeatOperator, repeatOperand);
+                this._list.splice(1, 0, repeatOperator, repeatOperand);
             }
         }
         return true;
@@ -151,31 +150,31 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     }
 
     /**
-     * Evaluates the entire operationList according to mathematical order of operations.
+     * Evaluates the entire list according to mathematical order of operations.
      * @returns {null}
      */
     this.evaluateOperationList = function() {
-        while (operationList.length > 3) {
-            for (var i=0; i < operationList.length; i++) {
-                if (operationList[i].type == 'operator') {
-                    if (operationList[i].operatorType == 'binary') {
-                        if (i > operationList.length - 3 || operationList[i].priority >= operationList[i+2].priority) { // enforce mathematical order of operations
-                            var operation = operationList.slice(i - 1, i + 2);
+        while (this._list.length > 3) {
+            for (var i=0; i < this._list.length; i++) {
+                if (this._list[i].type == 'operator') {
+                    if (this._list[i].operatorType == 'binary') {
+                        if (i > this._list.length - 3 || this._list[i].priority >= this._list[i+2].priority) { // enforce mathematical order of operations
+                            var operation = this._list.slice(i - 1, i + 2);
                             var newOperation = evaluateBinaryOperation(operation);
-                            operationList.splice(i - 1, 3, newOperation);
+                            this._list.splice(i - 1, 3, newOperation);
                             break;
                         }
-                        /*var operation = operationList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
+                        /*var operation = this._list.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
                         var newOperation = evaluateBinaryOperation(operation);
-                        operationList.splice(i - 1, 3, newOperation);
+                        this._list.splice(i - 1, 3, newOperation);
                         break;*/
-                    } else if (operationList[i].operatorType == 'unary') {
+                    } else if (this._list[i].operatorType == 'unary') {
 
                     }
                 }
             }
         }
-        operationList = [operationList[0]];
+        this._list = [this._list[0]];
         return null;
     };
 
@@ -217,8 +216,8 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     //  Begin cloneOperationList method
     this.cloneOperationList = function () {
         var listClone = [];
-        for (var i = 0; i < operationList.length; i++) {
-            listClone.push(new CopyOperation(operationList[i]));
+        for (var i = 0; i < this._list.length; i++) {
+            listClone.push(new CopyOperation(this._list[i]));
         }
         return listClone;
     };
@@ -226,16 +225,16 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin get/set last operation methods
     this.getLastOperation = function(){
-        if (operationList.length < 1) {
+        if (this._list.length < 1) {
             return undefined;
         }
-        return operationList[operationList.length - 1];
+        return this._list[this._list.length - 1];
     };
     this.setLastOperation = function(newEntry) {
-        if (operationList.length >= 1) {
-            operationList[operationList.length - 1] = newEntry;
+        if (this._list.length >= 1) {
+            this._list[this._list.length - 1] = newEntry;
         } else {
-            operationList.push(newEntry);
+            this._list.push(newEntry);
         }
     };
     //  Close get/set last operation methods
