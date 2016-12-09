@@ -32,8 +32,8 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             return ['null',''];
         } else {
             var operationListClone = operationList.slice();
-            var lastOperation = (operationListClone.pop()).value();
-            return [lastOperation, operationListClone.map(function(object){return object.value();}).join(' ')];
+            var lastOperation = (operationListClone.pop()).value;
+            return [lastOperation, operationListClone.map(function(object){return object.value;}).join(' ')];
         }
     };
     //  Close getDisplayObject method
@@ -57,9 +57,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin clearEntry method
     this.clearEntry = function() {
-        if (!this.getLastOperation().implicit() ||
-            this.getLastOperation().type() != 'operand' ||
-            this.getLastOperation().value() !== '0') {
+        if (!this.getLastOperation().implicit ||
+            this.getLastOperation().type != 'operand' ||
+            this.getLastOperation().value !== '0') {
             this.setLastOperation(new ZeroOperation());
             if (operationList.length > 1) {
                 setRepeatOperation(this.getLastOperation());
@@ -95,16 +95,16 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin validation method
     this.validateOperationList = function() {
-        if (this.getLastOperation().type() != 'operator') {
+        if (this.getLastOperation().type != 'operator') {
             return false;
         }
-        if (this.getLastOperation().getOperatorType() != 'binary') {
+        if (this.getLastOperation().operatorType != 'binary') {
             return false;
         }
         var runningList = this.cloneOperationList();
         runningList = evaluateRunningList(runningList);
         operationList.push(new CopyOperation(runningList[0], true));
-        if (operationList[operationList.length - 2].value() != '=') {
+        if (operationList[operationList.length - 2].value != '=') {
             setRepeatOperation(operationList[operationList.length - 1]);
             return false;
         }
@@ -127,9 +127,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     function evaluateRunningList (runningList) {
         while (runningList.length > 3) {
             for (var i=0; i < runningList.length-1; i++) {
-                if (runningList[i].type() == 'operator') {
-                    if (runningList[i].getOperatorType() == 'binary' && i < runningList.length - 2) {
-                        if (runningList[i].priority() >= runningList[i+2].priority()) { // enforce mathematical order of operations
+                if (runningList[i].type == 'operator') {
+                    if (runningList[i].operatorType == 'binary' && i < runningList.length - 2) {
+                        if (runningList[i].priority >= runningList[i+2].priority) { // enforce mathematical order of operations
                             var operation = runningList.slice(i - 1, i + 2);
                             var newOperation = evaluateBinaryOperation(operation);
                             runningList.splice(i - 1, 3, newOperation);
@@ -141,7 +141,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
                         var newOperation = evaluateBinaryOperation(operation);
                         runningList.splice(i - 1, 3, newOperation);
                         break;*/
-                    } else if (runningList[i].getOperatorType() == 'unary') {
+                    } else if (runningList[i].operatorType == 'unary') {
 
                     }
                 }
@@ -157,9 +157,9 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     this.evaluateOperationList = function() {
         while (operationList.length > 3) {
             for (var i=0; i < operationList.length; i++) {
-                if (operationList[i].type() == 'operator') {
-                    if (operationList[i].getOperatorType() == 'binary') {
-                        if (i > operationList.length - 3 || operationList[i].priority() >= operationList[i+2].priority()) { // enforce mathematical order of operations
+                if (operationList[i].type == 'operator') {
+                    if (operationList[i].operatorType == 'binary') {
+                        if (i > operationList.length - 3 || operationList[i].priority >= operationList[i+2].priority) { // enforce mathematical order of operations
                             var operation = operationList.slice(i - 1, i + 2);
                             var newOperation = evaluateBinaryOperation(operation);
                             operationList.splice(i - 1, 3, newOperation);
@@ -169,7 +169,7 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
                         var newOperation = evaluateBinaryOperation(operation);
                         operationList.splice(i - 1, 3, newOperation);
                         break;*/
-                    } else if (operationList[i].getOperatorType() == 'unary') {
+                    } else if (operationList[i].operatorType == 'unary') {
 
                     }
                 }
@@ -186,10 +186,10 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
      * @returns {Operation}
      */
     function evaluateBinaryOperation(operatorList) {
-        operand1 = parseFloat(operatorList[0].value());
-        operand2 = parseFloat(operatorList[2].value());
+        operand1 = parseFloat(operatorList[0].value);
+        operand2 = parseFloat(operatorList[2].value);
         var result;
-        switch (operatorList[1].value()) {
+        switch (operatorList[1].value) {
             case '+':
                 result = parseFloat(
                     (operand1 + operand2).toPrecision(10) // perform operation, then set maximum significant figures
@@ -252,14 +252,14 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
             repeatOperand = null;
             repeatOperator = null;
             return null;
-        } else if (operation.type() == 'operand') {
+        } else if (operation.type == 'operand') {
             repeatOperand = operation;
             return null;
-        } else if (operation.getOperatorType() == 'unary') {
+        } else if (operation.operatorType == 'unary') {
             repeatOperand = null;
             repeatOperator = null;
             return null;
-        } else if (operation.value() != '='){
+        } else if (operation.value != '='){
             repeatOperator = operation;
             return null;
         } else {
