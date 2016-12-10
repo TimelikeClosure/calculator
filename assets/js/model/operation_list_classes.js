@@ -140,7 +140,7 @@ function OperationList (operations) {
                     if (runningList[i].operatorType == 'binary' && i < runningList.length - 2) {
                         if (runningList[i].priority >= runningList[i+2].priority) { // enforce mathematical order of operations
                             var operation = runningList.slice(i - 1, i + 2);
-                            var newOperation = evaluateBinaryOperation(operation);
+                            var newOperation = this._evaluateBinaryOperation(operation);
                             runningList.splice(i - 1, 3, newOperation);
                             break;
                         } else if (i == runningList.length - 3) {
@@ -166,7 +166,7 @@ function OperationList (operations) {
                     if (this._list[i].operatorType == 'binary') {
                         if (i > this._list.length - 3 || this._list[i].priority >= this._list[i+2].priority) { // enforce mathematical order of operations
                             var operation = this._list.slice(i - 1, i + 2);
-                            var newOperation = evaluateBinaryOperation(operation);
+                            var newOperation = this._evaluateBinaryOperation(operation);
                             this._list.splice(i - 1, 3, newOperation);
                             break;
                         }
@@ -182,11 +182,10 @@ function OperationList (operations) {
 
     /**
      * Takes an array containing a binary operation and returns the evaluated result.
-     * @param {Array} operatorList length of 3, structured as [OperandStage, OperatorStage, OperandStage],
-     * where OperatorStage is a binary operation
+     * @param {Array} operatorList length of 3, structured as [Operand, Operator, Operand], where Operator is a binary operation
      * @returns {Operation}
      */
-    function evaluateBinaryOperation(operatorList) {
+    this._evaluateBinaryOperation = function (operatorList) {
         operand1 = parseFloat(operatorList[0].value);
         operand2 = parseFloat(operatorList[2].value);
         var result;
@@ -212,7 +211,7 @@ function OperationList (operations) {
                 ).toString(); // remove trailing zeroes
                 return new Operation(result, 'operand', true);
         }
-    }
+    };
     //  Close evaluation methods
 
     //  Begin cloneOperationList method
