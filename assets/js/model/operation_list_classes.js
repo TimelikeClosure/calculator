@@ -111,7 +111,7 @@ function OperationList (operations) {
             return false;
         }
         var runningList = this.cloneOperationList();
-        runningList = evaluateRunningList(runningList);
+        runningList = this._evaluateRunningList(runningList);
         this._list.push(new CopyOperation(runningList[0], true));
         if (this._list[this._list.length - 2].value != '=') {
             this._setRepeatOperation(this._list[this._list.length - 1]);
@@ -133,7 +133,7 @@ function OperationList (operations) {
      * @param runningList
      * @returns {Array}
      */
-    function evaluateRunningList (runningList) {
+    this._evaluateRunningList = function(runningList) {
         while (runningList.length > 3) {
             for (var i=0; i < runningList.length-1; i++) {
                 if (runningList[i].type == 'operator') {
