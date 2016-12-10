@@ -56,7 +56,7 @@ function OperationList (operations) {
             } else {
                 this.last = new ZeroOperation();
                 if (this._list.length > 1) {
-                    this._setRepeatOperation(this.last);
+                    this.repeat = this.last;
                 }
             }
         }
@@ -71,7 +71,7 @@ function OperationList (operations) {
             this.last.value !== '0') {
             this.last = new ZeroOperation();
             if (this._list.length > 1) {
-                this._setRepeatOperation(this.last);
+                this.repeat = this.last;
             }
             return true;
         } else {
@@ -90,13 +90,13 @@ function OperationList (operations) {
             return false;
         } else if (this._list[currentIndex].canReplace(inputObject)) {
             this._list[currentIndex] = new InputObjectOperation(inputObject);
-            this._setRepeatOperation(this._list[currentIndex]);
+            this.repeat = this._list[currentIndex];
         } else if (this._list[currentIndex].canAppend(inputObject)) {
             this._list[currentIndex].appendInputObject(inputObject);
-            this._setRepeatOperation(this._list[currentIndex]);
+            this.repeat = this._list[currentIndex];
         } else if (this._list[currentIndex].canFollow(inputObject)) {
             this._list.push(new InputObjectOperation(inputObject));
-            this._setRepeatOperation(this._list[currentIndex + 1]);
+            this.repeat = this._list[currentIndex + 1];
         }
         return true;
     };
@@ -114,7 +114,7 @@ function OperationList (operations) {
         runningList = this._evaluateRunningList(runningList);
         this._list.push(new CopyOperation(runningList[0], true));
         if (this._list[this._list.length - 2].value != '=') {
-            this._setRepeatOperation(this._list[this._list.length - 1]);
+            this.repeat = this.last;
             return false;
         }
         if (this._list.length == 3) {
@@ -223,37 +223,9 @@ function OperationList (operations) {
         return listClone;
     };
     //  Close cloneOperationList method
-
-    //  Begin repeat evaluation operator methods
-    this.getRepeatOperator = function() {
-        return this._repeat.operator;
-    };
-    this.getRepeatOperand = function () {
-        return this._repeat.operand;
-    };
-    this._setRepeatOperation = function(operation) {
-        if (operation === null) {
-            this._repeat.operand = null;
-            this._repeat.operator = null;
-            return null;
-        } else if (operation.type == 'operand') {
-            this._repeat.operand = operation;
-            return null;
-        } else if (operation.operatorType == 'unary') {
-            this._repeat.operand = null;
-            this._repeat.operator = null;
-            return null;
-        } else if (operation.value != '='){
-            this._repeat.operator = operation;
-            return null;
-        } else {
-            return null;
-        }
-    }
-    //  Close repeat evaluation operator methods
 }
 
-    //  Begin get/set last operation methods
+    //  Begin get/set methods
 Object.defineProperties(OperationList.prototype, {
     'last': {
         enumerable: true,
@@ -270,9 +242,32 @@ Object.defineProperties(OperationList.prototype, {
                 this._list.push(operation);
             }
         }
+    },
+    'repeat': {
+        enumerable: true,
+        get: function () {
+            return {
+                operand: this._repeat.operand,
+                operator: this._repeat.operator
+            }
+        },
+        set: function (operation) {
+            if (operation === null) {
+                this._repeat.operand = null;
+                this._repeat.operator = null;
+            } else if (operation.type === 'operand') {
+                this._repeat.operand = operation;
+            } else if (operation.operatorType === 'unary') {
+                this._repeat.operand = null;
+                this._repeat.operator = null;
+            } else if (operation.value != '='){
+                this._repeat.operator = operation;
+            }
+            return null;
+        }
     }
 })
-    //  Close get/set last operation methods
+    //  Close get/set methods
 
 
 //  Close OperationList class
