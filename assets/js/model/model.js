@@ -43,7 +43,7 @@ function CalculatorModel () {
                     var previousOperationList = currentOperationList;
                     currentOperationList = cloneOperationList(previousOperationList);
                     currentOperationList.evaluateOperationList();
-                    previousOperationList.setLastOperation(currentOperationList.getLastOperation());
+                    previousOperationList.last = currentOperationList.last;
                     operationHistory.archiveOperationList(previousOperationList);
                 }
                 break;
