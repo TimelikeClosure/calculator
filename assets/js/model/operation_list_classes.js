@@ -2,27 +2,37 @@
 //  Begin OperationList constructor
 /**
  * Constructs a list for holding and modifying Operations. A single Operation represents a single expression.
- * @param {Object} [operations] - existing operation(s) used to populate OperationList
- * @param {Object} repeatOperator
- * @param {Object} repeatOperand
+ * @param {Object} [operations] - Operation(s) used to populate OperationList
+ *     @property {Operation|Operation[]} [list] - existing Operation(s) used to populate OperationList list
+ *     @property {Object} [repeat] - Operations to repeat on next evaluation
+ *         @property {Operation} [operand] - operand to repeat on next evaluation
+ *         @property {Operation} [operator] - operator to repeat on next evaluation
  * @constructor
  */
-function OperationList (operations, repeatOperator, repeatOperand) {
+function OperationList (operations) {
 
     //  Begin initial private variable assignment
-    if (operations === undefined) {
-        this._list = [new ZeroOperation()];
-    } else if (!(Array.isArray(operations))) {
-        this._list = [new CopyOperation(operations, true)];
-    } else {
-        this._list = operations;
+    this._list = [new ZeroOperation()];
+    this._repeat = {
+        operand: null,
+        operator: null
+    };
+    if (operations) {
+        if (operations.hasOwnProperty('list') && operations.list) {
+            this._list = (Array.isArray(operations.list))
+                ? operations.list
+                : [new CopyOperation(operations.list, true)];
+        }
+        if (operations.hasOwnProperty('repeat') && operations.repeat) {
+            if (operations.repeat.hasOwnProperty('operand') && operations.repeat.operand) {
+                this._repeat.operand = operations.repeat.operand;
+            }
+            if (operations.repeat.hasOwnProperty('operator') && operations.repeat.operator) {
+                this._repeat.operator = operations.repeat.operator;
+            }
+        }
     }
-    if (repeatOperator === undefined) {
-        repeatOperator = null;
-    }
-    if (repeatOperand === undefined) {
-        repeatOperand = null;
-    }
+
     //  Close initial private variable assignment
 
     //  Begin getDisplayObject method
@@ -46,7 +56,7 @@ function OperationList (operations, repeatOperator, repeatOperand) {
             } else {
                 this.setLastOperation(new ZeroOperation());
                 if (this._list.length > 1) {
-                    setRepeatOperation(this.getLastOperation());
+                    this._setRepeatOperation(this.getLastOperation());
                 }
             }
         }
@@ -61,7 +71,7 @@ function OperationList (operations, repeatOperator, repeatOperand) {
             this.getLastOperation().value !== '0') {
             this.setLastOperation(new ZeroOperation());
             if (this._list.length > 1) {
-                setRepeatOperation(this.getLastOperation());
+                this._setRepeatOperation(this.getLastOperation());
             }
             return true;
         } else {
@@ -80,13 +90,13 @@ function OperationList (operations, repeatOperator, repeatOperand) {
             return false;
         } else if (this._list[currentIndex].canReplace(inputObject)) {
             this._list[currentIndex] = new InputObjectOperation(inputObject);
-            setRepeatOperation(this._list[currentIndex]);
+            this._setRepeatOperation(this._list[currentIndex]);
         } else if (this._list[currentIndex].canAppend(inputObject)) {
             this._list[currentIndex].appendInputObject(inputObject);
-            setRepeatOperation(this._list[currentIndex]);
+            this._setRepeatOperation(this._list[currentIndex]);
         } else if (this._list[currentIndex].canFollow(inputObject)) {
             this._list.push(new InputObjectOperation(inputObject));
-            setRepeatOperation(this._list[currentIndex + 1]);
+            this._setRepeatOperation(this._list[currentIndex + 1]);
         }
         return true;
     };
@@ -104,12 +114,12 @@ function OperationList (operations, repeatOperator, repeatOperand) {
         runningList = evaluateRunningList(runningList);
         this._list.push(new CopyOperation(runningList[0], true));
         if (this._list[this._list.length - 2].value != '=') {
-            setRepeatOperation(this._list[this._list.length - 1]);
+            this._setRepeatOperation(this._list[this._list.length - 1]);
             return false;
         }
         if (this._list.length == 3) {
-            if (repeatOperand !== null && repeatOperator !== null) {
-                this._list.splice(1, 0, repeatOperator, repeatOperand);
+            if (this._repeat.operand !== null && this._repeat.operator !== null) {
+                this._list.splice(1, 0, this._repeat.operator, this._repeat.operand);
             }
         }
         return true;
@@ -136,10 +146,6 @@ function OperationList (operations, repeatOperator, repeatOperand) {
                         } else if (i == runningList.length - 3) {
                             return [runningList[runningList.length - 2]];
                         }
-                        /*var operation = runningList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
-                        var newOperation = evaluateBinaryOperation(operation);
-                        runningList.splice(i - 1, 3, newOperation);
-                        break;*/
                     } else if (runningList[i].operatorType == 'unary') {
 
                     }
@@ -164,10 +170,6 @@ function OperationList (operations, repeatOperator, repeatOperand) {
                             this._list.splice(i - 1, 3, newOperation);
                             break;
                         }
-                        /*var operation = this._list.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
-                        var newOperation = evaluateBinaryOperation(operation);
-                        this._list.splice(i - 1, 3, newOperation);
-                        break;*/
                     } else if (this._list[i].operatorType == 'unary') {
 
                     }
@@ -241,25 +243,25 @@ function OperationList (operations, repeatOperator, repeatOperand) {
 
     //  Begin repeat evaluation operator methods
     this.getRepeatOperator = function() {
-        return repeatOperator;
+        return this._repeat.operator;
     };
     this.getRepeatOperand = function () {
-        return repeatOperand;
+        return this._repeat.operand;
     };
-    function setRepeatOperation(operation) {
+    this._setRepeatOperation = function(operation) {
         if (operation === null) {
-            repeatOperand = null;
-            repeatOperator = null;
+            this._repeat.operand = null;
+            this._repeat.operator = null;
             return null;
         } else if (operation.type == 'operand') {
-            repeatOperand = operation;
+            this._repeat.operand = operation;
             return null;
         } else if (operation.operatorType == 'unary') {
-            repeatOperand = null;
-            repeatOperator = null;
+            this._repeat.operand = null;
+            this._repeat.operator = null;
             return null;
         } else if (operation.value != '='){
-            repeatOperator = operation;
+            this._repeat.operator = operation;
             return null;
         } else {
             return null;

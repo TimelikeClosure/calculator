@@ -57,7 +57,13 @@ function CalculatorModel () {
 
     //  Begin cloneOperationList method
     function cloneOperationList (operationList) {
-        return new OperationList(operationList.cloneOperationList(), operationList.getRepeatOperator(), operationList.getRepeatOperand());
+        return new OperationList({
+            list: operationList.cloneOperationList(),
+            repeat: {
+                operand: operationList.getRepeatOperand(),
+                operator: operationList.getRepeatOperator()
+            }
+        });
     }
     //  Close cloneOperationList method
 
