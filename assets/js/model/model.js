@@ -41,7 +41,7 @@ function CalculatorModel () {
                 }
                 if (evaluate) {
                     var previousOperationList = currentOperationList;
-                    currentOperationList = cloneOperationList(previousOperationList);
+                    currentOperationList = previousOperationList.clone();
                     currentOperationList.evaluateOperationList();
                     previousOperationList.last = currentOperationList.last;
                     operationHistory.archiveOperationList(previousOperationList);
@@ -54,15 +54,6 @@ function CalculatorModel () {
         return [currentOperationList.getDisplayObject(), operationHistory.getDisplayObject()];
     };
     //  Close applyInputObject method
-
-    //  Begin cloneOperationList method
-    function cloneOperationList (operationList) {
-        return new OperationList({
-            list: operationList.cloneOperationList(),
-            repeat: operationList.repeat
-        });
-    }
-    //  Close cloneOperationList method
 
     //  Begin clearLastChar method
     /**

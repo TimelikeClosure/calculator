@@ -110,7 +110,7 @@ function OperationList (operations) {
         if (this.last.operatorType != 'binary') {
             return false;
         }
-        var runningList = this.cloneOperationList();
+        var runningList = this._cloneList();
         runningList = this._evaluateRunningList(runningList);
         this._list.push(new CopyOperation(runningList[0], true));
         if (this._list[this._list.length - 2].value != '=') {
@@ -214,15 +214,13 @@ function OperationList (operations) {
     };
     //  Close evaluation methods
 
-    //  Begin cloneOperationList method
-    this.cloneOperationList = function () {
-        var listClone = [];
-        for (var i = 0; i < this._list.length; i++) {
-            listClone.push(new CopyOperation(this._list[i]));
-        }
-        return listClone;
+    //  Begin cloneList method
+    this._cloneList = function () {
+        return this._list.map(function (operation) {
+            return new CopyOperation(operation);
+        });
     };
-    //  Close cloneOperationList method
+    //  Close cloneList method
 }
 
     //  Begin get/set methods
@@ -260,7 +258,7 @@ Object.defineProperties(OperationList.prototype, {
             } else if (operation.operatorType === 'unary') {
                 this._repeat.operand = null;
                 this._repeat.operator = null;
-            } else if (operation.value != '='){
+            } else if (operation.value !== '='){
                 this._repeat.operator = operation;
             }
             return null;
@@ -269,5 +267,15 @@ Object.defineProperties(OperationList.prototype, {
 })
     //  Close get/set methods
 
+    //  Begin clone method
+OperationList.prototype.clone = function () {
+    return new OperationList({
+        list: this._list.map(function (operation) {
+            return new CopyOperation(operation);
+        }),
+        repeat: this.repeat
+    });
+};
+    //  Close clone method
 
 //  Close OperationList class
