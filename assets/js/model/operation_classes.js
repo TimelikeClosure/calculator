@@ -163,6 +163,13 @@ Operation.prototype.truncate = function() {
     this._value = this._value.substr(0, this._value.length - 1);
 };
     //  End value modification methods
+    
+    //  Begin clone method
+Operation.prototype.clone = function (implicit) {
+    if (implicit === undefined) { implicit = this._implicit;}
+    return new Operation(this._value, this._type, implicit);
+};
+    //  Close clone method
 
 //  Close Operation class
 
@@ -185,17 +192,4 @@ function InputObjectOperation(inputObject) {
     Operation.call(this, inputObject.getString(), inputObject.getOperationType());
 }
 InputObjectOperation.prototype.__proto__ = Operation.prototype;
-
-/**
- * Generates an Operation object, copying from another Operation object. If no creationType is specified,
- * takes on the same value as the reference object.
- * @param {Object} referenceOperation
- * @param {string|undefined} creationType
- * @constructor
- */
-function CopyOperation(referenceOperation, implicit) {
-    if (implicit === undefined) {implicit = referenceOperation.implicit;}
-    Operation.call(this, referenceOperation.value, referenceOperation.type, implicit);
-}
-CopyOperation.prototype.__proto__ = Operation.prototype;
 //  Close Operation sub-class constructors

@@ -21,7 +21,7 @@ function OperationList (operations) {
         if (operations.hasOwnProperty('list') && operations.list) {
             this._list = (Array.isArray(operations.list))
                 ? operations.list
-                : [new CopyOperation(operations.list, true)];
+                : [operations.clone(true)];
         }
         if (operations.hasOwnProperty('repeat') && operations.repeat) {
             if (operations.repeat.hasOwnProperty('operand') && operations.repeat.operand) {
@@ -112,7 +112,7 @@ function OperationList (operations) {
         }
         var runningList = this._cloneList();
         runningList = this._evaluateRunningList(runningList);
-        this._list.push(new CopyOperation(runningList[0], true));
+        this._list.push(runningList[0].clone(true));
         if (this._list[this._list.length - 2].value != '=') {
             this.repeat = this.last;
             return false;
@@ -217,7 +217,7 @@ function OperationList (operations) {
     //  Begin cloneList method
     this._cloneList = function () {
         return this._list.map(function (operation) {
-            return new CopyOperation(operation);
+            return operation.clone();
         });
     };
     //  Close cloneList method
@@ -271,7 +271,7 @@ Object.defineProperties(OperationList.prototype, {
 OperationList.prototype.clone = function () {
     return new OperationList({
         list: this._list.map(function (operation) {
-            return new CopyOperation(operation);
+            return operation.clone();
         }),
         repeat: this.repeat
     });
