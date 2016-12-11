@@ -35,7 +35,7 @@ function CalculatorModel () {
                 break;
             case 'operand':
             case 'operator':
-                var validate = currentOperationList.addOperation(inputObject);
+                var validate = currentOperationList.push(inputObject);
                 if (validate) {
                     var evaluate = currentOperationList.validateOperationList();
                 }

@@ -80,28 +80,6 @@ function OperationList (operations) {
     };
     //  Close clearEntry method
 
-    //  Begin addOperation method
-    this.addOperation = function(inputObject) {
-        var currentIndex = this._list.length - 1;
-        while (currentIndex > 0 && this._list[currentIndex].canPrecede(inputObject)) {
-            currentIndex--;
-        }
-        if (currentIndex < 0) {
-            return false;
-        } else if (this._list[currentIndex].canReplace(inputObject)) {
-            this._list[currentIndex] = new InputObjectOperation(inputObject);
-            this.repeat = this._list[currentIndex];
-        } else if (this._list[currentIndex].canAppend(inputObject)) {
-            this._list[currentIndex].appendInputObject(inputObject);
-            this.repeat = this._list[currentIndex];
-        } else if (this._list[currentIndex].canFollow(inputObject)) {
-            this._list.push(new InputObjectOperation(inputObject));
-            this.repeat = this._list[currentIndex + 1];
-        }
-        return true;
-    };
-    //  Close addOperation method
-
     //  Begin validation method
     this.validateOperationList = function() {
         if (this.last.type != 'operator') {
@@ -266,6 +244,28 @@ Object.defineProperties(OperationList.prototype, {
     }
 })
     //  Close get/set methods
+
+    //  Begin push method
+OperationList.prototype.push = function(inputObject) {
+    var currentIndex = this._list.length - 1;
+    while (currentIndex > 0 && this._list[currentIndex].canPrecede(inputObject)) {
+        currentIndex--;
+    }
+    if (currentIndex < 0) {
+        return false;
+    } else if (this._list[currentIndex].canReplace(inputObject)) {
+        this._list[currentIndex] = new InputObjectOperation(inputObject);
+        this.repeat = this._list[currentIndex];
+    } else if (this._list[currentIndex].canAppend(inputObject)) {
+        this._list[currentIndex].appendInputObject(inputObject);
+        this.repeat = this._list[currentIndex];
+    } else if (this._list[currentIndex].canFollow(inputObject)) {
+        this._list.push(new InputObjectOperation(inputObject));
+        this.repeat = this._list[currentIndex + 1];
+    }
+    return true;
+};
+    //  Close push method
 
     //  Begin clone method
 OperationList.prototype.clone = function () {
