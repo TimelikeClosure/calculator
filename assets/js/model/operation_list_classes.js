@@ -1,53 +1,62 @@
 
-//  Begin OperationList constructor
+//  Begin OperationList class
 /**
- * Constructs a list for holding and modifying OperationStages. A single OperationStage represents a single expression.
- * @param {Object} lastOperation
- * @param {Object} repeatOperator
- * @param {Object} repeatOperand
+ * Constructs a list for holding and modifying Operations. A single Operation represents a single expression.
+ * @param {Object} [operations] - Operation(s) used to populate OperationList
+ *     @property {Operation|Operation[]} [list] - existing Operation(s) used to populate OperationList list
+ *     @property {Object} [repeat] - Operations to repeat on next evaluation
+ *         @property {Operation} [operand] - operand to repeat on next evaluation
+ *         @property {Operation} [operator] - operator to repeat on next evaluation
  * @constructor
  */
-function OperationList (lastOperation, repeatOperator, repeatOperand) {
+function OperationList (operations) {
 
     //  Begin initial private variable assignment
-    var operationList;
-    if (lastOperation === undefined) {
-        operationList = [new ZeroOperationStage()];
-    } else if (!(Array.isArray(lastOperation))) {
-        operationList = [new CopyOperationStage(lastOperation), 'implicit'];
-    } else {
-        operationList = lastOperation;
+    this._list = [new ZeroOperation()];
+    this._repeat = {
+        operand: null,
+        operator: null
+    };
+    if (operations) {
+        if (operations.hasOwnProperty('list') && operations.list) {
+            this._list = (Array.isArray(operations.list))
+                ? operations.list
+                : [operations.clone(true)];
+        }
+        if (operations.hasOwnProperty('repeat') && operations.repeat) {
+            if (operations.repeat.hasOwnProperty('operand') && operations.repeat.operand) {
+                this._repeat.operand = operations.repeat.operand;
+            }
+            if (operations.repeat.hasOwnProperty('operator') && operations.repeat.operator) {
+                this._repeat.operator = operations.repeat.operator;
+            }
+        }
     }
-    if (repeatOperator === undefined) {
-        repeatOperator = null;
-    }
-    if (repeatOperand === undefined) {
-        repeatOperand = null;
-    }
+
     //  Close initial private variable assignment
 
     //  Begin getDisplayObject method
     this.getDisplayObject = function() {
-        if (operationList.length < 1) {
+        if (this._list.length < 1) {
             return ['null',''];
         } else {
-            var operationListClone = operationList.slice();
-            var lastOperation = (operationListClone.pop()).getValue();
-            return [lastOperation, operationListClone.map(function(object){return object.getValue();}).join(' ')];
+            var operationListClone = this._list.slice();
+            var lastOperation = (operationListClone.pop()).value;
+            return [lastOperation, operationListClone.map(function(object){return object.value;}).join(' ')];
         }
     };
     //  Close getDisplayObject method
 
     //  Begin clearLastChar method
     this.clearLastChar = function() {
-        var lastOperationTruncate = this.getLastOperation().canTruncate();
+        var lastOperationTruncate = this.last.canTruncate();
         if (lastOperationTruncate) {
             if (lastOperationTruncate > 1) {
-                return this.getLastOperation().truncate();
+                return this.last.truncate();
             } else {
-                this.setLastOperation(new ZeroOperationStage());
-                if (operationList.length > 1) {
-                    setRepeatOperation(this.getLastOperation());
+                this.last = new ZeroOperation();
+                if (this._list.length > 1) {
+                    this.repeat = this.last;
                 }
             }
         }
@@ -57,12 +66,12 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
 
     //  Begin clearEntry method
     this.clearEntry = function() {
-        if (this.getLastOperation().getCreationType() == 'explicit' ||
-            this.getLastOperation().getOperationType() != 'operand' ||
-            this.getLastOperation().getValue() !== '0') {
-            this.setLastOperation(new ZeroOperationStage());
-            if (operationList.length > 1) {
-                setRepeatOperation(this.getLastOperation());
+        if (!this.last.implicit ||
+            this.last.type != 'operand' ||
+            this.last.value !== '0') {
+            this.last = new ZeroOperation();
+            if (this._list.length > 1) {
+                this.repeat = this.last;
             }
             return true;
         } else {
@@ -71,46 +80,24 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     };
     //  Close clearEntry method
 
-    //  Begin addOperation method
-    this.addOperation = function(inputObject) {
-        var currentIndex = operationList.length - 1;
-        while (currentIndex > 0 && operationList[currentIndex].canPrecede(inputObject)) {
-            currentIndex--;
-        }
-        if (currentIndex < 0) {
-            return false;
-        } else if (operationList[currentIndex].canReplace(inputObject)) {
-            operationList[currentIndex] = new InputObjectOperationStage(inputObject);
-            setRepeatOperation(operationList[currentIndex]);
-        } else if (operationList[currentIndex].canAppend(inputObject)) {
-            operationList[currentIndex].appendInputObject(inputObject);
-            setRepeatOperation(operationList[currentIndex]);
-        } else if (operationList[currentIndex].canFollow(inputObject)) {
-            operationList.push(new InputObjectOperationStage(inputObject));
-            setRepeatOperation(operationList[currentIndex + 1]);
-        }
-        return true;
-    };
-    //  Close addOperation method
-
     //  Begin validation method
     this.validateOperationList = function() {
-        if (this.getLastOperation().getOperationType() != 'operator') {
+        if (this.last.type != 'operator') {
             return false;
         }
-        if (this.getLastOperation().getOperatorType() != 'binary') {
+        if (this.last.operatorType != 'binary') {
             return false;
         }
-        var runningList = this.cloneOperationList();
-        runningList = evaluateRunningList(runningList);
-        operationList.push(new CopyOperationStage(runningList[0], 'implicit'));
-        if (operationList[operationList.length - 2].getValue() != '=') {
-            setRepeatOperation(operationList[operationList.length - 1]);
+        var runningList = this._cloneList();
+        runningList = this._evaluateRunningList(runningList);
+        this._list.push(runningList[0].clone(true));
+        if (this._list[this._list.length - 2].value != '=') {
+            this.repeat = this.last;
             return false;
         }
-        if (operationList.length == 3) {
-            if (repeatOperand !== null && repeatOperator !== null) {
-                operationList.splice(1, 0, repeatOperator, repeatOperand);
+        if (this._list.length == 3) {
+            if (this._repeat.operand !== null && this._repeat.operator !== null) {
+                this._list.splice(1, 0, this._repeat.operator, this._repeat.operand);
             }
         }
         return true;
@@ -124,24 +111,20 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
      * @param runningList
      * @returns {Array}
      */
-    function evaluateRunningList (runningList) {
+    this._evaluateRunningList = function(runningList) {
         while (runningList.length > 3) {
             for (var i=0; i < runningList.length-1; i++) {
-                if (runningList[i].getOperationType() == 'operator') {
-                    if (runningList[i].getOperatorType() == 'binary' && i < runningList.length - 2) {
-                        if (runningList[i].getOperatorPriority() >= runningList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
+                if (runningList[i].type == 'operator') {
+                    if (runningList[i].operatorType == 'binary' && i < runningList.length - 2) {
+                        if (runningList[i].priority >= runningList[i+2].priority) { // enforce mathematical order of operations
                             var operation = runningList.slice(i - 1, i + 2);
-                            var newOperation = evaluateBinaryOperation(operation);
+                            var newOperation = this._evaluateBinaryOperation(operation);
                             runningList.splice(i - 1, 3, newOperation);
                             break;
                         } else if (i == runningList.length - 3) {
                             return [runningList[runningList.length - 2]];
                         }
-                        /*var operation = runningList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
-                        var newOperation = evaluateBinaryOperation(operation);
-                        runningList.splice(i - 1, 3, newOperation);
-                        break;*/
-                    } else if (runningList[i].getOperatorType() == 'unary') {
+                    } else if (runningList[i].operatorType == 'unary') {
 
                     }
                 }
@@ -151,143 +134,148 @@ function OperationList (lastOperation, repeatOperator, repeatOperand) {
     }
 
     /**
-     * Evaluates the entire operationList according to mathematical order of operations.
+     * Evaluates the entire list according to mathematical order of operations.
      * @returns {null}
      */
     this.evaluateOperationList = function() {
-        while (operationList.length > 3) {
-            for (var i=0; i < operationList.length; i++) {
-                if (operationList[i].getOperationType() == 'operator') {
-                    if (operationList[i].getOperatorType() == 'binary') {
-                        if (i > operationList.length - 3 || operationList[i].getOperatorPriority() >= operationList[i+2].getOperatorPriority()) { // enforce mathematical order of operations
-                            var operation = operationList.slice(i - 1, i + 2);
-                            var newOperation = evaluateBinaryOperation(operation);
-                            operationList.splice(i - 1, 3, newOperation);
+        while (this._list.length > 3) {
+            for (var i=0; i < this._list.length; i++) {
+                if (this._list[i].type == 'operator') {
+                    if (this._list[i].operatorType == 'binary') {
+                        if (i > this._list.length - 3 || this._list[i].priority >= this._list[i+2].priority) { // enforce mathematical order of operations
+                            var operation = this._list.slice(i - 1, i + 2);
+                            var newOperation = this._evaluateBinaryOperation(operation);
+                            this._list.splice(i - 1, 3, newOperation);
                             break;
                         }
-                        /*var operation = operationList.slice(i - 1, i + 2); // evaluate without enforcing mathematical order of operation
-                        var newOperation = evaluateBinaryOperation(operation);
-                        operationList.splice(i - 1, 3, newOperation);
-                        break;*/
-                    } else if (operationList[i].getOperatorType() == 'unary') {
+                    } else if (this._list[i].operatorType == 'unary') {
 
                     }
                 }
             }
         }
-        operationList = [operationList[0]];
+        this._list = [this._list[0]];
         return null;
     };
 
     /**
      * Takes an array containing a binary operation and returns the evaluated result.
-     * @param {Array} operatorList length of 3, structured as [OperandStage, OperatorStage, OperandStage],
-     * where OperatorStage is a binary operation
-     * @returns {OperationStage}
+     * @param {Array} operatorList length of 3, structured as [Operand, Operator, Operand], where Operator is a binary operation
+     * @returns {Operation}
      */
-    function evaluateBinaryOperation(operatorList) {
-        operand1 = parseFloat(operatorList[0].getValue());
-        operand2 = parseFloat(operatorList[2].getValue());
+    this._evaluateBinaryOperation = function (operatorList) {
+        operand1 = parseFloat(operatorList[0].value);
+        operand2 = parseFloat(operatorList[2].value);
         var result;
-        switch (operatorList[1].getValue()) {
+        switch (operatorList[1].value) {
             case '+':
                 result = parseFloat(
                     (operand1 + operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new Operation(result, 'operand', true);
             case '-':
                 result = parseFloat(
                     (operand1 - operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new Operation(result, 'operand', true);
             case '×':
                 result = parseFloat(
                     (operand1 * operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new Operation(result, 'operand', true);
             case '÷':
                 result = parseFloat(
                     (operand1 / operand2).toPrecision(10) // perform operation, then set maximum significant figures
                 ).toString(); // remove trailing zeroes
-                return new OperationStage(result, 'operand', 'implicit');
+                return new Operation(result, 'operand', true);
         }
-    }
+    };
     //  Close evaluation methods
 
-    //  Begin cloneOperationList method
-    this.cloneOperationList = function () {
-        var listClone = [];
-        for (var i = 0; i < operationList.length; i++) {
-            listClone.push(new CopyOperationStage(operationList[i]));
-        }
-        return listClone;
+    //  Begin cloneList method
+    this._cloneList = function () {
+        return this._list.map(function (operation) {
+            return operation.clone();
+        });
     };
-    //  Close cloneOperationList method
+    //  Close cloneList method
+}
 
-    //  Begin get/set last operation methods
-    this.getLastOperation = function(){
-        if (operationList.length < 1) {
-            return undefined;
+    //  Begin get/set methods
+Object.defineProperties(OperationList.prototype, {
+    'last': {
+        enumerable: true,
+        get: function () {
+            if (this._list.length < 1) {
+                return undefined;
+            }
+            return this._list[this._list.length - 1];
+        },
+        set: function(operation) {
+            if (this._list.length >= 1) {
+                this._list[this._list.length - 1] = operation;
+            } else {
+                this._list.push(operation);
+            }
         }
-        return operationList[operationList.length - 1];
-    };
-    this.setLastOperation = function(newEntry) {
-        if (operationList.length >= 1) {
-            operationList[operationList.length - 1] = newEntry;
-        } else {
-            operationList.push(newEntry);
-        }
-    };
-    //  Close get/set last operation methods
-
-    //  Begin repeat evaluation operator methods
-    this.getRepeatOperator = function() {
-        return repeatOperator;
-    };
-    this.getRepeatOperand = function () {
-        return repeatOperand;
-    };
-    function setRepeatOperation(operation) {
-        if (operation === null) {
-            repeatOperand = null;
-            repeatOperator = null;
-            return null;
-        } else if (operation.getOperationType() == 'operand') {
-            repeatOperand = operation;
-            return null;
-        } else if (operation.getOperatorType() == 'unary') {
-            repeatOperand = null;
-            repeatOperator = null;
-            return null;
-        } else if (operation.getValue() != '='){
-            repeatOperator = operation;
-            return null;
-        } else {
+    },
+    'repeat': {
+        enumerable: true,
+        get: function () {
+            return {
+                operand: this._repeat.operand,
+                operator: this._repeat.operator
+            }
+        },
+        set: function (operation) {
+            if (operation === null) {
+                this._repeat.operand = null;
+                this._repeat.operator = null;
+            } else if (operation.type === 'operand') {
+                this._repeat.operand = operation;
+            } else if (operation.operatorType === 'unary') {
+                this._repeat.operand = null;
+                this._repeat.operator = null;
+            } else if (operation.value !== '='){
+                this._repeat.operator = operation;
+            }
             return null;
         }
     }
-    //  Close repeat evaluation operator methods
-}
-//  Close OperationList constructor
+})
+    //  Close get/set methods
 
-//  Begin OperationHistory constructor
-/**
- * Constructs an object for storing previously evaluated OperationLists
- * @constructor
- */
-function OperationHistory () {
-    var history = [];
+    //  Begin push method
+OperationList.prototype.push = function(inputObject) {
+    var currentIndex = this._list.length - 1;
+    while (currentIndex > 0 && this._list[currentIndex].canPrecede(inputObject)) {
+        currentIndex--;
+    }
+    if (currentIndex < 0) {
+        return false;
+    } else if (this._list[currentIndex].canReplace(inputObject)) {
+        this._list[currentIndex] = new InputObjectOperation(inputObject);
+        this.repeat = this._list[currentIndex];
+    } else if (this._list[currentIndex].canAppend(inputObject)) {
+        this._list[currentIndex].appendInputObject(inputObject);
+        this.repeat = this._list[currentIndex];
+    } else if (this._list[currentIndex].canFollow(inputObject)) {
+        this._list.push(new InputObjectOperation(inputObject));
+        this.repeat = this._list[currentIndex + 1];
+    }
+    return true;
+};
+    //  Close push method
 
-    this.archiveOperationList = function(operationList) {
-        history.push(operationList);
-    };
+    //  Begin clone method
+OperationList.prototype.clone = function () {
+    return new OperationList({
+        list: this._list.map(function (operation) {
+            return operation.clone();
+        }),
+        repeat: this.repeat
+    });
+};
+    //  Close clone method
 
-    this.getDisplayObject = function() {
-        var displayObject = [];
-        for (var i = history.length - 1; i >= 0; i--) {
-            displayObject.push(history[i].getDisplayObject());
-        }
-        return displayObject;
-    };
-}
-//  Close OperationHistory constructor
+//  Close OperationList class

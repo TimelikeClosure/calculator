@@ -35,15 +35,15 @@ function CalculatorModel () {
                 break;
             case 'operand':
             case 'operator':
-                var validate = currentOperationList.addOperation(inputObject);
+                var validate = currentOperationList.push(inputObject);
                 if (validate) {
                     var evaluate = currentOperationList.validateOperationList();
                 }
                 if (evaluate) {
                     var previousOperationList = currentOperationList;
-                    currentOperationList = cloneOperationList(previousOperationList);
+                    currentOperationList = previousOperationList.clone();
                     currentOperationList.evaluateOperationList();
-                    previousOperationList.setLastOperation(currentOperationList.getLastOperation());
+                    previousOperationList.last = currentOperationList.last;
                     operationHistory.archiveOperationList(previousOperationList);
                 }
                 break;
@@ -54,12 +54,6 @@ function CalculatorModel () {
         return [currentOperationList.getDisplayObject(), operationHistory.getDisplayObject()];
     };
     //  Close applyInputObject method
-
-    //  Begin cloneOperationList method
-    function cloneOperationList (operationList) {
-        return new OperationList(operationList.cloneOperationList(), operationList.getRepeatOperator(), operationList.getRepeatOperand());
-    }
-    //  Close cloneOperationList method
 
     //  Begin clearLastChar method
     /**
