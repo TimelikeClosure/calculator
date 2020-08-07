@@ -242,7 +242,7 @@ Object.defineProperties(OperationList.prototype, {
             return null;
         }
     }
-})
+});
     //  Close get/set methods
 
     //  Begin push method
@@ -279,3 +279,32 @@ OperationList.prototype.clone = function () {
     //  Close clone method
 
 //  Close OperationList class
+
+//  Begin RunningOperationList subclass
+function RunningOperationList(){
+
+}
+RunningOperationList.prototype.__proto__ = OperationList.prototype;
+//  Close RunningOperationList subclass
+
+//  Begin OperationGroup subclass
+function OperationGroup(){
+
+}
+OperationGroup.prototype.__proto__ = OperationList.prototype;
+//  Close OperationGroup subclass
+
+//  Begin BinaryOperationList subclass
+function BinaryOperationList(operand1, operator, operand2){
+
+}
+BinaryOperationList.prototype.__proto__ = OperationList.prototype;
+//  Close BinaryOperationList subclass
+
+//  Begin UnaryOperationList subclass
+function UnaryOperationList(operand, operator){
+
+}
+
+UnaryOperationList.prototype.__proto__ = OperationList.prototype;
+//  Close UnaryOperationList subclass
